@@ -52,9 +52,12 @@ gap is work still to be done.
   vocabulary, domain rules, naming/voice, technology decisions), and
   `003_plan_project_prompt_queue.md` generates the *full ordered* implementation prompt
   queue (Phases A–I, browser-local, incremental).
-- **Next planned prompt:** run `003_plan_project_prompt_queue.md` to generate the full
-  implementation prompt queue (Phases A–I). It proposes its plan for approval before
-  writing any prompt files.
+- **Implementation prompt queue generated:** prompts `004`–`033` now exist, covering
+  Phases A–I (content & shell; capture & timing; features; head/phone motion; eye-local &
+  gaze; calibration; filtering & events; content mapping; export & hardening). They are the
+  ordered work queue for building the site in full, browser-local and incremental, and have
+  **not been run yet**.
+- **Next planned prompt:** run `004_step0_overview_content.md`, then proceed in order.
 
 ## Important caveats
 
@@ -69,3 +72,4 @@ gap is work still to be done.
 - `001_setup.md` — initial PocketGaze scaffold and eek-a-dev workflow.
 - `002_create_specification.md` — created the binding v1 specification (run twice:
   conservative v1.0, then expanded to the full v1.0).
+- `003_plan_project_prompt_queue.md` — generated the implementation prompt queue (`004`–`033`).
