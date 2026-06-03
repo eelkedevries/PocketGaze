@@ -1,14 +1,18 @@
 # Specification
 
-**Version:** 1.2 · **Last updated:** 2026-06-03
+**Version:** 1.3 · **Last updated:** 2026-06-03
 
-**Changelog:** 1.2 — locked the primary feature-extraction library to **MediaPipe
-FaceLandmarker (Tasks Vision, Web)** following the `011` spike; recorded the rationale,
-self-hosting requirement, and browser support in §7.3, added it to §8, and removed the
-corresponding §9 open item. 1.1 — locked the derived-data export format (§4.1) to a single
-combined CSV with a row-type column; added the early shared data/session model to the
-architecture (§2.3); recorded the head-pose method as a spike decision (§7.3). 1.0 — first
-full spec.
+**Changelog:** 1.3 — locked the head-pose method to the **MediaPipe facial transformation
+matrix** (with Procrustes-style normalisation as a lightweight fallback; OpenCV.js
+`solvePnP` rejected) following the `014` spike; recorded the rationale, bundle/performance/
+stability implications, and the monocular-translation caveat in §7.3, added it to §8, and
+removed the corresponding §9 open item. 1.2 — locked the primary feature-extraction library
+to **MediaPipe FaceLandmarker (Tasks Vision, Web)** following the `011` spike; recorded the
+rationale, self-hosting requirement, and browser support in §7.3, added it to §8, and
+removed the corresponding §9 open item. 1.1 — locked the derived-data export format (§4.1)
+to a single combined CSV with a row-type column; added the early shared data/session model
+to the architecture (§2.3); recorded the head-pose method as a spike decision (§7.3). 1.0 —
+first full spec.
 
 The authoritative design canon for PocketGaze. **Only the sections actually filled below
 are binding.** A section or sub-item marked _Not yet decided_ imposes no constraint and is
@@ -420,7 +424,7 @@ browser support, and exposed timestamp/quality/export fields — background §9)
 |---|---|---|
 | Capture & timing | `getUserMedia`; `requestVideoFrameCallback` (+ fallback) | open |
 | Feature extraction | **MediaPipe FaceLandmarker (Tasks Vision, Web)** — primary; Human retained as documented alternative | **locked** (spike `011`; see below) |
-| Head pose | library pose output; OpenCV.js `solvePnP`; Procrustes-style normalisation | open — decided by the `014` method spike |
+| Head pose | **MediaPipe facial transformation matrix** (primary); Procrustes-style normalisation (fallback); OpenCV.js `solvePnP` (rejected) | **locked** (spike `014`; see below) |
 | Eye-local signal | iris-proxy geometry from the chosen landmark library | open |
 | Screen gaze | WebEyeTrack _(spike)_; WebGazer.js (baseline/fallback only) | open |
 | Calibration | custom follow-the-dots task + JS regression; model personalisation if available | open |
@@ -473,6 +477,46 @@ page) per §2.8.
 or Step 2 demo was built here (that is `012`), and no model binary was committed. No
 prototype code ships in the production build.
 
+#### Head-pose method — decided (spike `014`)
+
+The `014` spike compared three browser-local head-pose methods for estimating head rotation
+(yaw/pitch/roll) and approximate translation from the locked feature library's landmarks.
+**The MediaPipe FaceLandmarker facial transformation matrix** is selected as the
+**primary** method; a **Procrustes-style landmark normalisation** is retained as a
+lightweight fallback/cross-check; **OpenCV.js `solvePnP` is rejected**.
+
+| Criterion | MediaPipe transformation matrix (primary) | Procrustes-style normalisation (fallback) | OpenCV.js `solvePnP` (rejected) |
+|---|---|---|---|
+| Extra dependency / bundle cost | **None** — already in the locked library; enabled via `outputFacialTransformationMatrixes` | None — pure JS/TS we implement (small) | Large — OpenCV.js WASM (~8–10 MB) loaded just for pose |
+| Model assets | None beyond the existing `.task` model | None | A canonical 3D face model + camera intrinsics required |
+| Browser support | Same as the feature module (WASM + GPU/CPU) | Universal (plain maths) | WASM; heavy init; weaker on low-end devices |
+| Mid-range Android performance (§2.8) | Strong — computed alongside detection, no extra pass | Strong — trivial linear algebra | Weak — large download + per-frame solve |
+| Output: yaw/pitch/roll | Yes — decomposed from the 4×4 matrix | Yes — from the fitted rotation | Yes |
+| Output: translation (tx/ty/tz) | Yes — approximate (monocular) | Position/scale proxy only; depth ambiguous | Yes — approximate (monocular) |
+| Output stability | Good — library smooths across frames | Moderate — depends on landmark stability | Moderate — sensitive to intrinsics/landmark noise |
+| Implementation complexity | Low — read matrix, decompose Euler angles | Moderate — implement Procrustes + decomposition | High — calibration, 3D model, solver wiring |
+| Good enough for the portfolio demo | **Yes** | Yes (rotation), weaker translation | Yes, but not worth the cost |
+
+**Rationale.** The transformation matrix is effectively free: the locked MediaPipe model
+already computes it, so enabling `outputFacialTransformationMatrixes` adds **no bundle
+weight, no extra model, and no second inference pass** — decisive for the mid-range Android
+target (§2.8). It yields yaw/pitch/roll and an approximate translation in one step with the
+library's frame-to-frame smoothing. OpenCV.js `solvePnP` is rejected mainly on bundle size
+and init cost (an ~8–10 MB WASM payload purely for pose) and added complexity (3D face model
++ camera intrinsics), which is disproportionate for a portfolio explainer. The Procrustes
+approach is kept as a small, dependency-free fallback/cross-check, useful if the matrix is
+unavailable or for illustrating the geometry in the Step 3 subprocess panels.
+
+**Monocular-translation caveat.** With a single RGB camera and no metric calibration,
+translation — especially depth/distance (`head_tz`) — is **approximate and unscaled**; it
+indicates relative change, not true metric distance. Step 3 content and the `head_pose_quality`
+/ motion-quality labelling (`014b`, `015`) must treat translation cautiously and never imply
+metric accuracy (Domain rule §6.3, §6.4). Yaw/pitch/roll are more reliable than translation.
+
+**Status of this spike.** Decision only — no production head-pose module, motion-quality
+labelling, or Step 3 demo was built here (that is `014b`/`015`/`016`); no IMU access
+attempted (out of browser scope). No prototype code ships in the production build.
+
 ---
 
 ## 8. Locked decisions
@@ -508,6 +552,10 @@ version bump):
 14. The primary browser-local feature-extraction library is **MediaPipe FaceLandmarker
     (Tasks Vision, Web)** (spike `011`, §7.3); its model and WASM assets are **self-hosted**
     (no external CDN at runtime). Human is a documented alternative only.
+15. The head-pose method is the **MediaPipe facial transformation matrix** (spike `014`,
+    §7.3), with Procrustes-style normalisation as a lightweight fallback; OpenCV.js
+    `solvePnP` is rejected on bundle size/complexity. Monocular translation (esp. depth)
+    is approximate and must not be presented as metric.
 
 ---
 
@@ -516,8 +564,6 @@ version bump):
 Tracked items deliberately left open (no constraint until decided and moved to §8):
 
 - Whether to integrate WebEyeTrack for screen gaze — decided by the `018` spike.
-- The head-pose method (library pose vs OpenCV.js `solvePnP` vs Procrustes) — decided by the
-  `014` spike.
 - The final, exact CSV field names (the format and conventions are now locked in §4.1).
 - Persistence mechanism for the master control setting.
 - Whether Step 0 includes a pipeline diagram demo.

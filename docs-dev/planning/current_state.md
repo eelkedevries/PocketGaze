@@ -85,6 +85,11 @@ gap is work still to be done.
   Rationale, the self-hosting requirement (model + WASM assets served from our own origin,
   no runtime CDN), and browser support are recorded in §7.3; added to §8 and removed from
   §9 open decisions.
+- **Spec v1.3:** head-pose method locked (spike `014`) to the **MediaPipe facial
+  transformation matrix** (Procrustes-style normalisation kept as a lightweight fallback;
+  OpenCV.js `solvePnP` rejected on bundle size/complexity). Rationale, bundle/performance/
+  stability implications, and the monocular-translation caveat are recorded in §7.3; added
+  to §8 and removed from §9 open decisions.
 - **Next planned prompt:** run `004_step0_overview_content.md`, then proceed in order
   (note `007b` runs before `008`, and `014` before `014b`).
 
@@ -114,3 +119,10 @@ gap is work still to be done.
 - `010_step1_demo.md` — Step 1 live timing demo and master-controlled timing subprocess panels.
 - `011_landmark_library_spike.md` — locked the feature-extraction library to MediaPipe
   FaceLandmarker (Tasks Vision, Web); decision only, no code (spec v1.2).
+- `012_feature_extraction.md` — framework-agnostic feature module (`src/lib/featureExtraction.ts`,
+  `src/lib/eyeGeometry.ts`): MediaPipe landmarks, per-eye iris proxy, EAR openness, per-eye
+  quality, written to the session model; self-hosted model + WASM assets. Unit-tested.
+- `013_step2_demo.md` — Step 2 live feature-overlay demo (landmarks/eye regions/iris proxy
+  on the camera preview) and master-controlled feature subprocess panels.
+- `014_head_pose_method_spike.md` — locked the head-pose method to the MediaPipe facial
+  transformation matrix; decision only, no code (spec v1.3).
