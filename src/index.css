@@ -367,6 +367,42 @@ body {
   transform: scaleX(-1);
 }
 
+/* Step 3 head-motion quality label */
+.motion-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-left: 4px solid var(--colour-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.9rem;
+}
+
+.motion-label__caption {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--colour-muted);
+}
+
+.motion-label__value {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.motion-label--low {
+  border-left-color: #5be39b;
+}
+
+.motion-label--moderate {
+  border-left-color: #ffd166;
+}
+
+.motion-label--uncertain {
+  border-left-color: #ffb4b4;
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);
