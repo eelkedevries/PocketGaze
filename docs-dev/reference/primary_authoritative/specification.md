@@ -1,8 +1,18 @@
 # Specification
 
-**Version:** 1.3 · **Last updated:** 2026-06-03
+**Version:** 1.4 · **Last updated:** 2026-06-03
 
-**Changelog:** 1.3 — locked the head-pose method to the **MediaPipe facial transformation
+**Changelog:** 1.4 — recorded the **WebEyeTrack screen-gaze go/no-go** following the `018`
+spike: **no-go for initial implementation**. WebEyeTrack is MIT-licensed and promising, but
+at spike time it fails the project's hard pre-use checks — no published releases, undocumented
+self-hosting and undocumented timestamp/confidence/export fields — while adding a second
+**TensorFlow.js** runtime (heavy on the mid-range Android target, the same reason Human was
+not chosen over MediaPipe) and a **duplicate MediaPipe/BlazeFace front-end** alongside the
+already-locked FaceLandmarker. The optional Step 4 screen-gaze estimate will instead use a
+lightweight **custom calibration + JS regression baseline** (WebGazer-style) over the existing
+eye-local features (`017`); WebEyeTrack may be revisited if it matures (releases + documented
+self-hosting and exposed fields). Recorded the evaluation in §7.3, added it to §8, updated §3.4,
+and removed the corresponding §9 open item. 1.3 — locked the head-pose method to the **MediaPipe facial transformation
 matrix** (with Procrustes-style normalisation as a lightweight fallback; OpenCV.js
 `solvePnP` rejected) following the `014` spike; recorded the rationale, bundle/performance/
 stability implications, and the monocular-translation caveat in §7.3, added it to §8, and
@@ -239,8 +249,10 @@ stated here. Specific libraries are candidates until locked in §7.
 - **Goal:** produce the main signal — an eye-local signal, a screen-gaze signal, or both.
 - **Methods to explain:** eye-local signal estimation (iris proxy normalised within the eye
   region); screen-gaze estimation via calibrated mapping/model; model-based inference
-  (WebEyeTrack) vs baseline regression (WebGazer); content-mapped estimation (handed to
-  Step 7).
+  (e.g. WebEyeTrack) vs baseline regression (WebGazer-style) — the **implemented** screen-gaze
+  route is a custom calibration + JS regression baseline over the eye-local signal, with
+  WebEyeTrack evaluated and deferred (no-go, §7.3 spike `018`); content-mapped estimation
+  (handed to Step 7).
 - **Live demo:** an eye-local movement trace by default; an **optional** screen-gaze
   estimate when a mapping/model is available, with the two signal types **visibly and
   terminologically distinct**.
@@ -426,7 +438,7 @@ browser support, and exposed timestamp/quality/export fields — background §9)
 | Feature extraction | **MediaPipe FaceLandmarker (Tasks Vision, Web)** — primary; Human retained as documented alternative | **locked** (spike `011`; see below) |
 | Head pose | **MediaPipe facial transformation matrix** (primary); Procrustes-style normalisation (fallback); OpenCV.js `solvePnP` (rejected) | **locked** (spike `014`; see below) |
 | Eye-local signal | iris-proxy geometry from the chosen landmark library | open |
-| Screen gaze | WebEyeTrack _(spike)_; WebGazer.js (baseline/fallback only) | open |
+| Screen gaze | WebEyeTrack _(spike — **no-go**, `018`)_; custom calibration + JS regression baseline (WebGazer-style) | **locked** (spike `018`; see below) |
 | Calibration | custom follow-the-dots task + JS regression; model personalisation if available | open |
 | Filtering & events | One Euro filter; optional Kalman; custom blink/saccade detector | open |
 | Content mapping | DOM geometry APIs (`getBoundingClientRect`, `ResizeObserver`, `IntersectionObserver`) | open |
@@ -517,6 +529,52 @@ metric accuracy (Domain rule §6.3, §6.4). Yaw/pitch/roll are more reliable tha
 labelling, or Step 3 demo was built here (that is `014b`/`015`/`016`); no IMU access
 attempted (out of browser scope). No prototype code ships in the production build.
 
+#### Screen-gaze method — decided (spike `018`)
+
+The `018` spike evaluated **WebEyeTrack** (RedForestAI; arXiv:2508.19544) as a browser-local
+screen-gaze module against the background §9 pre-use checks. **Decision: no-go for the
+initial implementation.** The optional Step 4 screen-gaze estimate will instead be produced
+by a **lightweight custom calibration + JS regression baseline** (a WebGazer-style mapping)
+fitted over the eye-local features from `017`. WebEyeTrack remains the strongest open
+browser-native candidate and may be revisited if it matures.
+
+| Check (background §9) | WebEyeTrack | Custom calibration + JS regression (selected) |
+|---|---|---|
+| Licence | MIT — clean reuse | N/A — our own code (no third-party model) |
+| Model weights available | Yes (research model, "BlazeGaze") | None — fitted live from the user's calibration |
+| Self-hosting (no runtime CDN/service) | **Unconfirmed** — no published releases; asset distribution/self-hosting not documented | Yes — pure in-repo JS/TS, nothing to fetch |
+| Runtime / backend | **TensorFlow.js** — a second heavy runtime on top of the locked MediaPipe stack | None beyond the existing MediaPipe features |
+| Front-end face pipeline | Bundles its **own MediaPipe/BlazeFace** — duplicates the locked FaceLandmarker | Reuses the locked FaceLandmarker iris/eye-local features |
+| Mid-range Android performance (§2.8) | Model itself is fast (≈2.4 ms iPhone 14), but the extra TF.js runtime + duplicate face pass is heavy on mid-range phones | Trivial — a small regression evaluated per frame |
+| Timestamp / confidence / quality exposed | **Unconfirmed** — outputs a screen `(x,y)`; confidence/quality/timestamps not documented | We control all fields: `gaze_x/y`, `gaze_available`, `gaze_confidence` mapped into the §4 model |
+| Per-eye / export fields | Single combined screen point; no per-eye export documented | Per-eye stays in the eye-local layer (`017`); regression writes screen-gaze fields cleanly |
+| Calibration | Few-shot personalisation (k ≤ 9 samples) — attractive | Custom follow-the-dots calibration (`021`/`022`) |
+| Maturity / ecosystem | Newer project, small ecosystem (~40★), **no published releases** | Fully under our control; nothing external to track |
+
+**Rationale.** WebEyeTrack is genuinely promising — MIT-licensed, on-device, privacy-
+preserving, head-pose-aware, with strong reported accuracy and speed — but it fails the
+project's *hard* pre-use checks at spike time: **self-hosting** and the **exposed
+timestamp/confidence/export fields** required by §4 and background §9 are **undocumented and
+unverifiable**, and there are **no published releases** to pin and self-host (§2.7; build
+hygiene §2.1). It also brings a **TensorFlow.js** runtime — the very weight that decided the
+feature-library choice *against* Human (§7.3) — and ships its **own MediaPipe/BlazeFace front
+end**, duplicating the already-locked FaceLandmarker and running a second face pass per frame,
+which is disproportionate on the mid-range Android target (§2.8). For a portfolio explainer
+whose goal is a transparent, fully self-hosted pipeline, a small **custom calibration +
+regression baseline** over the existing eye-local signal is more controllable: it adds no new
+runtime or model, exposes every screen-gaze field we need (`gaze_x/y`, `gaze_available`,
+`gaze_confidence`), and keeps the eye-local / screen-gaze / content-mapped signal types
+cleanly distinct (§6.2). WebEyeTrack stays on record as a future option.
+
+**Signal-type caution.** The regression baseline produces a **screen-gaze estimate** that
+**requires calibration and validation**; it must remain visibly and terminologically distinct
+from the eye-local signal and must never be presented as precise gaze without a fitted,
+checked mapping (Domain rules §6.2, §6.4).
+
+**Status of this spike.** Decision only — no production screen-gaze integration, calibration,
+or Step 4 demo was built here (that is `019`/`021`/`022`/`020`), and **no WebEyeTrack assets
+or prototype code were added**. Nothing from this spike ships in the production build.
+
 ---
 
 ## 8. Locked decisions
@@ -556,6 +614,11 @@ version bump):
     §7.3), with Procrustes-style normalisation as a lightweight fallback; OpenCV.js
     `solvePnP` is rejected on bundle size/complexity. Monocular translation (esp. depth)
     is approximate and must not be presented as metric.
+16. **WebEyeTrack is not integrated** (spike `018`, §7.3): it fails the hard pre-use checks
+    (undocumented self-hosting and exposed timestamp/confidence/export fields; no published
+    releases) and adds a TensorFlow.js runtime plus a duplicate face pipeline. The optional
+    screen-gaze estimate uses a **custom calibration + JS regression baseline** over the
+    eye-local signal; it is a calibrated estimate kept distinct from the eye-local signal.
 
 ---
 
@@ -563,7 +626,6 @@ version bump):
 
 Tracked items deliberately left open (no constraint until decided and moved to §8):
 
-- Whether to integrate WebEyeTrack for screen gaze — decided by the `018` spike.
 - The final, exact CSV field names (the format and conventions are now locked in §4.1).
 - Persistence mechanism for the master control setting.
 - Whether Step 0 includes a pipeline diagram demo.
