@@ -126,3 +126,7 @@ gap is work still to be done.
   on the camera preview) and master-controlled feature subprocess panels.
 - `014_head_pose_method_spike.md` — locked the head-pose method to the MediaPipe facial
   transformation matrix; decision only, no code (spec v1.3).
+- `014b_head_pose_estimation.md` — head-pose module (`src/lib/headPose.ts`): decomposes the
+  facial transformation matrix into yaw/pitch/roll + approximate translation with a
+  pose-quality proxy, written to the session model via the feature extractor. Unit-tested;
+  monocular-translation caveat documented.

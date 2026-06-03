@@ -6,7 +6,8 @@
 //
 // Outputs written to the session model per spec §4:
 //   left/right_eye_quality, face_quality, left/right_eye_open, blink_state,
-//   left/right_eye_x/y_raw (iris-proxy coordinates, normalised 0-1).
+//   left/right_eye_x/y_raw (iris-proxy coordinates, normalised 0-1),
+//   head_yaw/pitch/roll, head_tx/ty/tz, head_pose_quality (head pose, §3.3, §8.15).
 
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import type { NormalizedLandmark } from '@mediapipe/tasks-vision';
@@ -26,6 +27,7 @@ import {
   type Point3,
   type LandmarkLike,
 } from './eyeGeometry';
+import { decomposeHeadPose, type HeadPose, type TransformMatrix } from './headPose';
 
 const BASE = import.meta.env.BASE_URL;
 const WASM_PATH = `${BASE}mediapipe-vision/wasm`;
@@ -53,6 +55,12 @@ export interface FaceFeatures {
   rightEye: EyeFeatures;
   /** Mean visibility across a spread of face landmarks (0-1). */
   faceQuality: number;
+  /**
+   * Head pose decomposed from the facial transformation matrix (§7.3, §8.15),
+   * or null when the matrix is unavailable for this frame. Translation is
+   * approximate/monocular — see the caveat in headPose.ts.
+   */
+  headPose: HeadPose | null;
   /**
    * Raw normalised landmarks (0-1) for the detected face, so callers can draw
    * overlays. Not written to the session model — derived fields are.
@@ -96,7 +104,9 @@ export class FaceFeatureExtractor {
       minFacePresenceConfidence: 0.5,
       minTrackingConfidence: 0.5,
       outputFaceBlendshapes: false,
-      outputFacialTransformationMatrixes: false,
+      // The transformation matrix is the locked head-pose source (§7.3, §8.15);
+      // it is computed alongside detection, so it adds no extra model or pass.
+      outputFacialTransformationMatrixes: true,
     };
     try {
       this.landmarker = await FaceLandmarker.createFromOptions(vision, {
@@ -130,9 +140,11 @@ export class FaceFeatureExtractor {
     if (!this.landmarker || this._state !== 'ready') return null;
 
     let rawLandmarks: NormalizedLandmark[][] | undefined;
+    let matrices: TransformMatrix[] | undefined;
     try {
       const result = this.landmarker.detectForVideo(video, timestampMs);
       rawLandmarks = result.faceLandmarks;
+      matrices = result.facialTransformationMatrixes as TransformMatrix[] | undefined;
     } catch {
       return null;
     }
@@ -143,6 +155,7 @@ export class FaceFeatureExtractor {
         face_quality: 0,
         left_eye_quality: 0,
         right_eye_quality: 0,
+        head_pose_quality: 0,
         model_name: MODEL_NAME,
         processing_location: 'browser_local',
       });
@@ -151,6 +164,16 @@ export class FaceFeatureExtractor {
 
     const landmarks = rawLandmarks[0] as LandmarkLike[];
     const features = extractFeatures(landmarks);
+
+    // Head pose from the facial transformation matrix (§7.3, §8.15). Pose
+    // quality is proxied by the face landmark quality, since pose is derived
+    // from the landmarks.
+    const matrix = matrices?.[0];
+    const headPose: HeadPose | null =
+      matrix && matrix.data && matrix.data.length >= 16
+        ? decomposeHeadPose(matrix, features.faceQuality)
+        : null;
+    features.headPose = headPose;
 
     const blinkState: BlinkState =
       features.leftEye.isOpen && features.rightEye.isOpen ? 'open' : 'closed';
@@ -167,6 +190,13 @@ export class FaceFeatureExtractor {
       left_eye_open: features.leftEye.isOpen,
       right_eye_open: features.rightEye.isOpen,
       blink_state: blinkState,
+      head_yaw: headPose?.yaw,
+      head_pitch: headPose?.pitch,
+      head_roll: headPose?.roll,
+      head_tx: headPose?.tx,
+      head_ty: headPose?.ty,
+      head_tz: headPose?.tz,
+      head_pose_quality: headPose?.quality,
       model_name: MODEL_NAME,
       processing_location: 'browser_local',
     });
@@ -207,6 +237,7 @@ function extractFeatures(landmarks: LandmarkLike[]): FaceFeatures {
       quality: averageVisibility(landmarks, RIGHT_EYE_EAR_IDX),
     },
     faceQuality: averageVisibility(landmarks, FACE_QUALITY_IDX),
+    headPose: null,
     landmarks,
   };
 }
