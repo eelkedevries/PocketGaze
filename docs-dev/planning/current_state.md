@@ -80,6 +80,11 @@ gap is work still to be done.
   N/A, ms-from-start `time_ms`); shared data/session model added to the architecture;
   head-pose method recorded as a spike decision. Deployment wording made consistent
   (auto-deploy on push to `main`) across README/spec/current_state/workflow.
+- **Spec v1.2:** primary feature-extraction library locked (spike `011`) to **MediaPipe
+  FaceLandmarker (Tasks Vision, Web)**, with Human kept as a documented alternative.
+  Rationale, the self-hosting requirement (model + WASM assets served from our own origin,
+  no runtime CDN), and browser support are recorded in §7.3; added to §8 and removed from
+  §9 open decisions.
 - **Next planned prompt:** run `004_step0_overview_content.md`, then proceed in order
   (note `007b` runs before `008`, and `014` before `014b`).
 
@@ -104,3 +109,8 @@ gap is work still to be done.
 - `007_about_privacy_page.md` — standalone about/privacy page linked from the footer.
 - `007b_shared_data_session_model.md` — shared pipeline types (`src/types/session.ts`) and the
   in-memory `SessionStore` (`src/lib/sessionStore.ts`), with `node --test` unit tests.
+- `008_camera_access.md` — reusable `CameraPreview` consent/stream component and `src/lib/camera.ts`.
+- `009_frame_timing.md` — `FrameTimer`/`FrameStatsTracker` (rVFC + rAF fallback) writing §4 timing fields.
+- `010_step1_demo.md` — Step 1 live timing demo and master-controlled timing subprocess panels.
+- `011_landmark_library_spike.md` — locked the feature-extraction library to MediaPipe
+  FaceLandmarker (Tasks Vision, Web); decision only, no code (spec v1.2).

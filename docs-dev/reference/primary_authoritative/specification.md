@@ -1,10 +1,14 @@
 # Specification
 
-**Version:** 1.1 · **Last updated:** 2026-06-03
+**Version:** 1.2 · **Last updated:** 2026-06-03
 
-**Changelog:** 1.1 — locked the derived-data export format (§4.1) to a single combined
-CSV with a row-type column; added the early shared data/session model to the architecture
-(§2.3); recorded the head-pose method as a spike decision (§7.3). 1.0 — first full spec.
+**Changelog:** 1.2 — locked the primary feature-extraction library to **MediaPipe
+FaceLandmarker (Tasks Vision, Web)** following the `011` spike; recorded the rationale,
+self-hosting requirement, and browser support in §7.3, added it to §8, and removed the
+corresponding §9 open item. 1.1 — locked the derived-data export format (§4.1) to a single
+combined CSV with a row-type column; added the early shared data/session model to the
+architecture (§2.3); recorded the head-pose method as a spike decision (§7.3). 1.0 — first
+full spec.
 
 The authoritative design canon for PocketGaze. **Only the sections actually filled below
 are binding.** A section or sub-item marked _Not yet decided_ imposes no constraint and is
@@ -415,7 +419,7 @@ browser support, and exposed timestamp/quality/export fields — background §9)
 | Concern | Candidate browser tools | Status |
 |---|---|---|
 | Capture & timing | `getUserMedia`; `requestVideoFrameCallback` (+ fallback) | open |
-| Feature extraction | Human; MediaPipe Tasks Vision / FaceLandmarker Web | open (choose one primary) |
+| Feature extraction | **MediaPipe FaceLandmarker (Tasks Vision, Web)** — primary; Human retained as documented alternative | **locked** (spike `011`; see below) |
 | Head pose | library pose output; OpenCV.js `solvePnP`; Procrustes-style normalisation | open — decided by the `014` method spike |
 | Eye-local signal | iris-proxy geometry from the chosen landmark library | open |
 | Screen gaze | WebEyeTrack _(spike)_; WebGazer.js (baseline/fallback only) | open |
@@ -423,6 +427,51 @@ browser support, and exposed timestamp/quality/export fields — background §9)
 | Filtering & events | One Euro filter; optional Kalman; custom blink/saccade detector | open |
 | Content mapping | DOM geometry APIs (`getBoundingClientRect`, `ResizeObserver`, `IntersectionObserver`) | open |
 | Inference backend | TensorFlow.js (only if a chosen model needs it) | open |
+
+#### Feature-extraction library — decided (spike `011`)
+
+The `011` spike compared **Human** (`@vladmandic/human`) and **MediaPipe FaceLandmarker
+(Tasks Vision, Web)** against the background §9 pre-use checks. Both pass the hard
+requirements — separate left/right eye access, an iris/pupil proxy, blink/eye-state, and
+full self-hosting. **MediaPipe FaceLandmarker (Tasks Vision, Web)** is selected as the
+**primary** browser-local face/eye/iris/eyelid feature library; **Human** is retained only
+as a documented alternative/fallback.
+
+| Check (background §9) | MediaPipe FaceLandmarker (Tasks Vision, Web) | Human (`@vladmandic/human`) |
+|---|---|---|
+| Licence | Apache-2.0 | MIT |
+| Self-hosting | Yes — one `.task` model + the Tasks-Vision WASM/loader assets, served from our own origin | Yes — TensorFlow.js graph models, self-hostable |
+| Runtime / backend | Purpose-built WASM + GPU (WebGL/WebGPU); lighter footprint | TensorFlow.js (WebGL/WASM/WebGPU); heavier JS + runtime weight |
+| Mid-range Android performance (§2.8) | Strong; mobile-optimised | Good, but TF.js-WebGL is heavier on mid-range phones |
+| Separate left/right eye | Yes — per-eye contour + iris landmarks | Yes |
+| Iris / pupil proxy | Yes — 478 landmarks incl. per-eye iris rings (right 468–472, left 473–477) | Yes — iris module |
+| Blink / eye-state | Yes — optional face blendshapes (`eyeBlink*`, `eyeSquint*`) plus eyelid EAR | Yes — eye-openness / blink |
+| Head pose (Step 3 / `014`) | Yes — optional facial transformation matrix (yaw/pitch/roll + translation) | Yes — built-in pose |
+| Raw outputs for subprocess panels | Raw landmarks, blendshapes, transform matrix exposed directly | Higher-level, more pre-smoothed outputs |
+
+**Rationale.** MediaPipe wins on the primary device target (§2.8): a mobile-optimised
+WASM+GPU pipeline with a smaller JS footprint than Human's TensorFlow.js stack, while still
+exposing everything the feature layer needs in one model. It returns **raw** landmarks,
+blendshapes, and the transformation matrix, which map directly onto the implementation/
+subprocess panels the step contract exposes (raw landmark set, per-eye markers, eye-aspect-
+ratio/openness, per-eye quality, head pose) — well suited to a portfolio explainer whose
+goal is to make the process understandable. Human is a credible MIT-licensed alternative
+and is kept on record should MediaPipe's runtime prove problematic on a target device.
+
+**Self-hosting (no external CDN reliance).** The model file (`face_landmarker.task`,
+≈3.7 MB) and the `@mediapipe/tasks-vision` WASM/loader assets MUST be copied into the
+build and served from the site's own origin — never fetched from a Google/jsDelivr CDN at
+runtime (§2.7; build hygiene §2.1). Before the model binary is committed (`012`), confirm
+it stays within the build-size budget.
+
+**Browser support / graceful degradation.** Targets Android Chrome/Chromium and Android
+Firefox via WASM + WebGL/WebGPU; iOS Safari is a later consideration. Where WASM or WebGL
+is unavailable the feature demos must degrade gracefully (clear message, never a broken
+page) per §2.8.
+
+**Status of this spike.** Decision only — no production feature-extraction module, overlay,
+or Step 2 demo was built here (that is `012`), and no model binary was committed. No
+prototype code ships in the production build.
 
 ---
 
@@ -456,6 +505,9 @@ version bump):
     write to it and export serialises it (§2.3).
 13. Pure pipeline logic is **unit-tested** with `node --test` via `npm run test`; UI and
     content remain test-light (overrides the default no-tests convention for those modules).
+14. The primary browser-local feature-extraction library is **MediaPipe FaceLandmarker
+    (Tasks Vision, Web)** (spike `011`, §7.3); its model and WASM assets are **self-hosted**
+    (no external CDN at runtime). Human is a documented alternative only.
 
 ---
 
@@ -463,8 +515,6 @@ version bump):
 
 Tracked items deliberately left open (no constraint until decided and moved to §8):
 
-- The primary feature-extraction library (Human vs MediaPipe FaceLandmarker Web) — decided
-  by the `011` spike.
 - Whether to integrate WebEyeTrack for screen gaze — decided by the `018` spike.
 - The head-pose method (library pose vs OpenCV.js `solvePnP` vs Procrustes) — decided by the
   `014` spike.
