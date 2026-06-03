@@ -276,6 +276,107 @@ body {
   text-decoration: underline;
 }
 
+/* Buttons */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface-alt);
+  color: var(--colour-text);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: #2b3749;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.button--primary {
+  background: var(--colour-accent);
+  border-color: var(--colour-accent);
+  color: #06131f;
+  font-weight: 600;
+}
+
+.button--primary:hover {
+  background: #5ea6ff;
+}
+
+/* Camera preview (reusable) */
+.camera-preview {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+}
+
+.camera-preview__stage {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #06090d;
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.camera-preview__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Mirror the front camera so movement feels natural. */
+  transform: scaleX(-1);
+}
+
+.camera-preview__placeholder {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--colour-muted);
+  font-size: 0.9rem;
+}
+
+.camera-preview__consent {
+  margin: 0;
+  color: var(--colour-muted);
+  font-size: 0.85rem;
+}
+
+.camera-preview__error {
+  margin: 0;
+  color: #ffb4b4;
+  font-size: 0.9rem;
+}
+
+.camera-preview--message {
+  border: 1px dashed #3a4a63;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  background: var(--colour-surface);
+  justify-items: stretch;
+}
+
+.camera-preview__message-title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: var(--colour-accent);
+}
+
+.camera-preview__message-body {
+  margin: 0;
+  color: var(--colour-muted);
+  font-size: 0.9rem;
+}
+
 /* Narrow-viewport (mobile) adjustments */
 @media (max-width: 480px) {
   .site-header__bar {
