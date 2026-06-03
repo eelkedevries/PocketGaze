@@ -78,6 +78,26 @@ export interface EyeLocalFilteredFields {
   combined_eye_y_filtered?: number;
 }
 
+/**
+ * Eye-local SIGNAL (specification §3.4, §4.3 "Eye-local signal", glossary §7.2,
+ * Domain rule §6.2): the iris/pupil proxy normalised WITHIN each detected eye
+ * region. Calibration-light and always available — but **not** screen gaze.
+ *
+ * Kept in its own field group, separate from `ScreenGazeFields` and
+ * `ContentMappedFields`, so the three signal kinds are never conflated
+ * (§6.2). These are the unfiltered eye-local coordinates; their filtered
+ * counterparts live in `EyeLocalFilteredFields`, and the raw iris-proxy feature
+ * coordinates (camera-frame) live in `EyeLocalRawFields`.
+ */
+export interface EyeLocalSignalFields {
+  left_eye_x?: number;
+  left_eye_y?: number;
+  right_eye_x?: number;
+  right_eye_y?: number;
+  combined_eye_x?: number;
+  combined_eye_y?: number;
+}
+
 /** Screen-gaze signal — raw and filtered coordinates plus availability/confidence. */
 export interface ScreenGazeFields {
   gaze_x_raw?: number;
@@ -164,6 +184,7 @@ export interface ProcessingMetadataFields {
 export interface SampleRow
   extends TimingFields,
     EyeLocalRawFields,
+    EyeLocalSignalFields,
     EyeLocalFilteredFields,
     ScreenGazeFields,
     ContentMappedFields,
