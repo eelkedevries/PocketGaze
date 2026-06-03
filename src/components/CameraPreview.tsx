@@ -19,9 +19,15 @@ type Status = 'idle' | 'requesting' | 'active' | 'error';
 interface CameraPreviewProps {
   /** Called with the live stream when it starts, and `null` when it stops. */
   onStreamChange?: (stream: MediaStream | null) => void;
+  /**
+   * Called with the preview `<video>` element once mounted (and `null` on
+   * unmount), so consumers can drive per-frame timing on the same element.
+   * Pass a stable callback (e.g. via `useCallback`).
+   */
+  onVideoElement?: (video: HTMLVideoElement | null) => void;
 }
 
-export default function CameraPreview({ onStreamChange }: CameraPreviewProps) {
+export default function CameraPreview({ onStreamChange, onVideoElement }: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<Status>('idle');
@@ -68,6 +74,12 @@ export default function CameraPreview({ onStreamChange }: CameraPreviewProps) {
 
   // Always release the camera when the component unmounts.
   useEffect(() => releaseStream, [releaseStream]);
+
+  // Expose the preview video element so consumers can attach frame timing.
+  useEffect(() => {
+    onVideoElement?.(videoRef.current);
+    return () => onVideoElement?.(null);
+  }, [onVideoElement]);
 
   if (!supported) {
     return (

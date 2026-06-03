@@ -1,5 +1,6 @@
 import type { StepDefinition } from '../steps';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
+import { stepDemos } from '../demos/registry';
 
 // Repeated step-page structure shared by every step.
 //
@@ -7,14 +8,19 @@ import { useImplementationDetails } from '../context/ImplementationDetailsContex
 //   1. brief introduction
 //   2. options / methods
 //   3. implementation on this page
-//   4. live demo area (placeholder)
-//   5. optional implementation/subprocess area (placeholder, master-controlled)
+//   4. live demo area (per-step demo, or placeholder)
+//   5. optional implementation/subprocess area (per-step panels or placeholder,
+//      master-controlled)
 //   6. outputs
 //   7. limitations
+//
+// Steps that register a demo in `stepDemos` render their own live-demo and
+// subprocess panels, sharing state via the demo's Provider, which wraps the page.
 export default function StepPage({ step }: { step: StepDefinition }) {
   const { showDetails } = useImplementationDetails();
+  const demo = stepDemos[step.slug];
 
-  return (
+  const content = (
     <article className="step-page">
       <h1 className="step-page__title">{step.title}</h1>
 
@@ -50,7 +56,9 @@ export default function StepPage({ step }: { step: StepDefinition }) {
 
       <section className="step-section">
         <h2>{step.noLiveDemo ? 'The pipeline at a glance' : 'Live demo'}</h2>
-        {step.noLiveDemo && step.pipelineStages ? (
+        {demo ? (
+          <demo.LiveDemo />
+        ) : step.noLiveDemo && step.pipelineStages ? (
           <ol className="pipeline-summary">
             {step.pipelineStages.map((stage) => (
               <li className="pipeline-summary__item" key={stage.label}>
@@ -73,7 +81,9 @@ export default function StepPage({ step }: { step: StepDefinition }) {
       {showDetails && (
         <section className="step-section step-section--details">
           <h2>Implementation details</h2>
-          {step.detailsContent ? (
+          {demo ? (
+            <demo.DetailsPanels />
+          ) : step.detailsContent ? (
             <ul className="details-content">
               {step.detailsContent.map((item) => (
                 <li key={item}>{item}</li>
@@ -116,4 +126,6 @@ export default function StepPage({ step }: { step: StepDefinition }) {
       </section>
     </article>
   );
+
+  return demo ? <demo.Provider>{content}</demo.Provider> : content;
 }

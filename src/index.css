@@ -377,6 +377,106 @@ body {
   font-size: 0.9rem;
 }
 
+/* Timing demo (Step 1) */
+.timing-demo {
+  display: grid;
+  gap: 1rem;
+}
+
+.timing-demo__note {
+  margin: 0;
+  color: var(--colour-muted);
+  font-size: 0.85rem;
+}
+
+.readout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.readout__item {
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+}
+
+.readout__label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--colour-muted);
+}
+
+.readout__value {
+  margin: 0.2rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subprocess panels */
+.panels {
+  display: grid;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+}
+
+.panel__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+
+.panel__table-wrap {
+  overflow-x: auto;
+}
+
+.panel__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.panel__table th,
+.panel__table td {
+  text-align: left;
+  padding: 0.3rem 0.6rem 0.3rem 0;
+}
+
+.panel__table thead th {
+  color: var(--colour-accent);
+  font-weight: 600;
+  border-bottom: 1px solid var(--colour-border);
+}
+
+.panel__list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+}
+
+.panel__note,
+.panel__empty {
+  margin: 0.6rem 0 0;
+  color: var(--colour-muted);
+  font-size: 0.82rem;
+}
+
+.panel__empty {
+  margin: 0;
+}
+
 /* Narrow-viewport (mobile) adjustments */
 @media (max-width: 480px) {
   .site-header__bar {
