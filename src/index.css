@@ -158,6 +158,77 @@ body {
   font-size: 0.9rem;
 }
 
+/* Glossary (signal-type definitions) */
+.glossary {
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.glossary__row {
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+}
+
+.glossary__term {
+  font-weight: 600;
+  color: var(--colour-accent);
+}
+
+.glossary__definition {
+  margin: 0.2rem 0 0;
+  color: var(--colour-muted);
+}
+
+/* At-a-glance pipeline summary (Step 0) */
+.pipeline-summary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+  counter-reset: none;
+}
+
+.pipeline-summary__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  column-gap: 0.6rem;
+  row-gap: 0.1rem;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  padding: 0.65rem 0.9rem;
+}
+
+.pipeline-summary__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--colour-accent);
+  white-space: nowrap;
+}
+
+.pipeline-summary__title {
+  font-weight: 600;
+}
+
+.pipeline-summary__summary {
+  grid-column: 2;
+  color: var(--colour-muted);
+  font-size: 0.92rem;
+}
+
+.details-content {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--colour-muted);
+}
+
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--colour-border);

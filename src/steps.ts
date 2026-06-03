@@ -5,6 +5,19 @@
 // project decisions and final copy will be set by a later prompt, once
 // docs-dev/reference/primary_authoritative/specification.md exists.
 
+/** A short term/definition pair (e.g. the signal-type glossary). */
+export interface GlossaryEntry {
+  term: string;
+  definition: string;
+}
+
+/** A single stage in the at-a-glance pipeline summary. */
+export interface PipelineStage {
+  label: string;
+  title: string;
+  summary: string;
+}
+
 export interface StepDefinition {
   /** Pipeline index, 0 = overview. */
   index: number;
@@ -24,6 +37,20 @@ export interface StepDefinition {
   outputs: string[];
   /** Known limitations / cautions. */
   limitations: string[];
+
+  // --- Optional fields used by the Step 0 overview only. ---
+  // Steps 1–7 leave these undefined and render the standard step-page shell.
+
+  /** When true, the "live demo" area shows a static summary instead of a camera placeholder. */
+  noLiveDemo?: boolean;
+  /** At-a-glance pipeline summary, shown in place of the live-demo placeholder. */
+  pipelineStages?: PipelineStage[];
+  /** Term/definition pairs rendered after the introduction (e.g. the signal-type glossary). */
+  glossary?: GlossaryEntry[];
+  /** Extra paragraph after "implementation on this page" (e.g. how to use the master control). */
+  usageNote?: string;
+  /** Real (static) content for the implementation-details panel, in place of the placeholder. */
+  detailsContent?: string[];
 }
 
 export const steps: StepDefinition[] = [
@@ -33,18 +60,56 @@ export const steps: StepDefinition[] = [
     navLabel: 'Step 0',
     title: 'Step 0: Overview',
     intro:
-      'PocketGaze is a portfolio project that explains how smartphone-camera eye tracking can be implemented in practice. It walks through a seven-step pipeline, pairing each step with a live demo and optional implementation panels. This page is a placeholder scaffold; no real tracking exists yet.',
+      'PocketGaze is a portfolio project that shows, step by step, how smartphone-camera eye tracking can be built in practice. It is meant to run entirely in your browser, so that nothing you show the camera has to leave your device. Rather than treating eye tracking as a single black box, it breaks the problem into a seven-step pipeline and pairs each step with a live demo and optional panels that reveal what is happening inside. One idea runs through the whole site: there are three different kinds of “gaze” signal that are easy to confuse, and keeping them apart is central to honest eye tracking.',
+    glossary: [
+      {
+        term: 'Eye-local signal',
+        definition:
+          'Where the iris or pupil sits within its own eye region. It is calibration-light and useful for movement traces, but it is not the same as where you are looking on the screen.',
+      },
+      {
+        term: 'Screen-gaze estimate',
+        definition:
+          'An estimate of the on-screen x/y position you are looking at. It depends on calibration and validation before it can be trusted.',
+      },
+      {
+        term: 'Content-mapped coordinate',
+        definition:
+          'A screen-gaze point translated into the content’s own coordinates, accounting for scrolling, zooming, and changes in layout.',
+      },
+    ],
     methods: [
-      'Treat smartphone eye tracking as a pipeline, not a single model.',
-      'Prefer browser-local processing as the first route.',
-      'Keep eye-local signals, screen-gaze estimates, and content-mapped coordinates clearly separate.',
+      'Treat smartphone eye tracking as a pipeline of seven stages, not a single model.',
+      'Do the work browser-locally first, so raw video never has to leave the device.',
+      'Keep eye-local signals, screen-gaze estimates, and content-mapped coordinates clearly separate, and label movement events cautiously as candidates.',
     ],
     implementationOnThisPage:
-      'This page introduces the pipeline and the site structure. Each later step reuses the same layout.',
-    outputs: ['A shared mental model of the seven steps and how they connect.'],
+      'This page is the map. It introduces the pipeline and the vocabulary; each of Steps 1–7 then follows the same layout — a brief introduction, the options and methods, what the page implements, a live demo, optional implementation details, the outputs, and the limitations.',
+    usageNote:
+      'Use the “Show implementation details” control in the header at any time. With it switched off, each step shows only its main demo and explanation; switch it on to reveal the optional subprocess panels — intermediate signals, frame timing, landmarks, head pose, filtering stages, calibration samples, and so on — that show how a result was produced. It is a single switch that applies across the whole site, including the panel below.',
+    noLiveDemo: true,
+    pipelineStages: [
+      { label: 'Step 1', title: 'Capture and timing', summary: 'Timestamped frames from the front camera.' },
+      { label: 'Step 2', title: 'Face and eye features', summary: 'Landmarks, eye regions, an iris proxy, and blink state.' },
+      { label: 'Step 3', title: 'Head and phone motion', summary: 'Head pose and motion-quality labels.' },
+      { label: 'Step 4', title: 'Eye-local and gaze signals', summary: 'Eye-local movement and, optionally, a screen-gaze estimate.' },
+      { label: 'Step 5', title: 'Calibration and personalisation', summary: 'A user-specific mapping to screen coordinates.' },
+      { label: 'Step 6', title: 'Filtering and events', summary: 'Cleaned traces and cautious candidate events.' },
+      { label: 'Step 7', title: 'Content and stimulus mapping', summary: 'Screen- and content-relative task data.' },
+    ],
+    detailsContent: [
+      'Stack: a static React + TypeScript site built with Vite and deployed to GitHub Pages.',
+      'Processing is browser-local: when the demos are added, frames are analysed on your device, and raw video is never uploaded or stored by default.',
+      'What can be exported later is derived data — signals, events, and task metadata — never the video itself.',
+    ],
+    outputs: [
+      'A shared mental model of the seven steps and how they connect.',
+      'A clear vocabulary: eye-local signal versus screen-gaze estimate versus content-mapped coordinate.',
+    ],
     limitations: [
-      'Scaffold only — pages contain simple placeholders.',
-      'No camera access, tracking, or data export is implemented yet.',
+      'This is an early scaffold: the per-step live demos are still placeholders and are being added incrementally.',
+      'No camera access, tracking, calibration, filtering, or data export is implemented yet, so nothing here is a working eye tracker.',
+      'Smartphone-camera eye tracking is inherently approximate; when the demos arrive, accuracy will be modest and movement events will be labelled as candidates.',
     ],
   },
   {
