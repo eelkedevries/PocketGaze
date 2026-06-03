@@ -1,8 +1,15 @@
 # Specification
 
-**Version:** 1.5 · **Last updated:** 2026-06-03
+**Version:** 1.6 · **Last updated:** 2026-06-03
 
-**Changelog:** 1.5 — **revised the `018` screen-gaze decision (supersedes `018b`)** from
+**Changelog:** 1.6 — implemented the WebEyeTrack screen-gaze provider (`019b`) and recorded a
+**documented self-hosting exception** (§2.7): inspection of `webeyetrack@0.0.2` confirmed it
+hardcodes non-overridable runtime CDN fetches for its MediaPipe model/WASM and does not bundle
+its BlazeGaze weights, so it cannot be self-hosted without forking. The opt-in provider B is
+therefore permitted to load its models from third-party CDNs at runtime (raw frames still
+never leave the device; default provider A stays fully self-hosted; B is dynamically imported
+so TensorFlow.js loads only when selected). Updated §2.7, §7.3, and §8. 1.5 — **revised the
+`018` screen-gaze decision (supersedes `018b`)** from
 no-go to **go: two user-selectable screen-gaze providers**. A published, MIT-licensed npm
 package (`webeyetrack@0.0.2`, itself built on `@mediapipe/tasks-vision`) makes WebEyeTrack
 bundle-and-self-hostable, removing the earlier release/self-hosting blocker; its remaining
@@ -176,6 +183,15 @@ this order:
   processing is local.
 - If a cloud route were ever explored (out of scope here), prefer **feature upload over
   frame upload**.
+- **Self-hosting of model assets** (default posture): the implemented feature/head-pose
+  stack serves its models and WASM from our own origin (§7.3, §8.14); no third-party CDN at
+  runtime. **Documented exception — the opt-in WebEyeTrack screen-gaze provider (`018b`):**
+  WebEyeTrack hardcodes runtime fetches of its MediaPipe model + WASM and BlazeGaze weights
+  from third-party CDNs and cannot be self-hosted without forking, so when **provider B is
+  selected** those third-party requests are permitted. This is narrowly scoped: it loads
+  models only, **raw camera frames still never leave the device**, and the default provider
+  (custom regression, A) remains fully self-hosted. Selecting B must make the third-party
+  model fetch evident to the user.
 
 ### 2.8 Performance and device targets
 
@@ -574,11 +590,15 @@ as the **default**. Shipping both behind one interface lets the explainer contra
 hand-built baseline against a model-based estimator — apt for a portfolio piece — without
 compromising the default load.
 
-**Self-hosting (no runtime CDN).** WebEyeTrack's model weights and WASM/loader assets MUST be
-bundled and served from the site's own origin (§2.7; build hygiene §2.1). The integration
-prompt (`019`) must confirm the package does not fetch weights from a CDN at runtime; if it
-does, vendor the weights into the build, and confirm the added bundle stays within budget
-before committing any model binary.
+**Self-hosting — confirmed CDN exception for B (`019b`).** Inspecting `webeyetrack@0.0.2`
+confirmed it **hardcodes runtime CDN fetches** (the MediaPipe `face_landmarker.task` from
+`storage.googleapis.com`, the Tasks-Vision WASM from `cdn.jsdelivr.net`) as non-overridable
+literals, and does not bundle its BlazeGaze weights — so it **cannot be self-hosted without
+forking**. Decision (`019b`): provider B is permitted to load its models from those CDNs at
+runtime, as the **documented opt-in exception** recorded in §2.7. The default provider (A)
+stays fully self-hosted; raw frames never leave the device; B's package and its TensorFlow.js
+runtime are **dynamically imported** so they load only when B is selected, keeping the default
+bundle clean.
 
 **Signal-type caution.** Either provider yields a **screen-gaze estimate** that **requires
 calibration and validation**; it must remain visibly and terminologically distinct from the
@@ -628,12 +648,14 @@ version bump):
     §7.3), with Procrustes-style normalisation as a lightweight fallback; OpenCV.js
     `solvePnP` is rejected on bundle size/complexity. Monocular translation (esp. depth)
     is approximate and must not be presented as metric.
-16. **Screen gaze ships two user-selectable providers** (spike `018`, revised `018b`, §7.3):
-    **(A)** a custom calibration + JS regression baseline (**default**) and **(B)** a
-    WebEyeTrack adapter (`webeyetrack` npm, MIT, **opt-in**, adds TensorFlow.js). Both
-    implement one `ScreenGazeProvider` interface and write the same §4 `gaze_*` fields;
-    WebEyeTrack assets are self-hosted (no runtime CDN). Screen gaze remains a calibrated
-    estimate, kept distinct from the eye-local signal.
+16. **Screen gaze ships two user-selectable providers** (spike `018`, revised `018b`/`019b`,
+    §7.3): **(A)** a custom calibration + JS regression baseline (**default**, fully
+    self-hosted) and **(B)** a WebEyeTrack adapter (`webeyetrack` npm, MIT, **opt-in**,
+    dynamically imported, adds TensorFlow.js). Both implement one `ScreenGazeProvider`
+    interface and write the same §4 `gaze_*` fields. B loads its models from third-party CDNs
+    at runtime — a documented opt-in exception to the self-hosting posture (§2.7); raw frames
+    never leave the device. Screen gaze remains a calibrated estimate, kept distinct from the
+    eye-local signal.
 
 ---
 
