@@ -43,7 +43,10 @@ Recorded at setup; these override the defaults above where they differ. Leave bl
 - **Language / locale:** British English for all user-facing text. Code identifiers may use the conventional American spellings of their libraries.
 - **Workflow:** Commit directly to `main`. One prompt = one reviewable unit. One commit per prompt. Prompt work uses the exact prompt filename as the commit message. No branches, no PRs unless explicitly requested.
 - **Verify command:** `npm run build` (and `npm run check` for a type-only pass).
-- **Testing policy:** No tests unless a prompt explicitly asks for them.
+- **Testing policy:** UI and content stay test-light. Pure, deterministic pipeline logic
+  (filtering, calibration mapping, blink/quality suppression, event detection,
+  content-coordinate mapping, export serialisation) is unit-tested with Node's built-in
+  runner via `npm run test` (`node --test`). No other tests unless a prompt asks.
 - **Deploy base path:** `/PocketGaze/` (set in `vite.config.ts`).
 
 ### Project-specific reference rules

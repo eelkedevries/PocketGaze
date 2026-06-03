@@ -9,10 +9,23 @@ ensuring no demo breaks when a capability or library is unavailable.
 
 Performance/robustness verification and targeted fixes only. No new features.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §2.8.
+2. `docs-dev/reference/secondary_background/overview.md` §6.1; `smartphone_eye_tracking_background.md` §6.
+3. `docs-dev/reviews/runtime_qa_checklist.md` (all rows).
+
+## Dependencies
+
+This prompt assumes:
+- The step demos (`010`,`013`,`016`,`020`,`023`,`027`,`030`) and export (`031`) are
+  complete.
+If major demos are missing, stop and report (QA needs something to test).
+
 ## Context
 
-Implements specification §2.8 (performance and device targets) and background §6 (browser/
-mobile constraints), §6.1 (Pipeline 1 verification checklist).
+Targeted hardening, not new functionality.
 
 ## Required changes
 
@@ -30,21 +43,33 @@ Do not:
 - add native-app or cloud code;
 - introduce heavy dependencies for micro-optimisation.
 
+## Data contracts touched
+
+Adds: none.
+Preserves: all existing data shapes and the export format.
+Does not: change schema or behaviour beyond performance/robustness fixes.
+
 ## Acceptance criteria
 
 The task is complete when:
 - demos run acceptably on the target browsers/devices (results documented);
 - missing-capability and denied-permission paths degrade gracefully, never breaking;
-- residual limitations are documented;
-- `npm run build` passes.
+- residual limitations are documented.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
+npm run test
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Work through `docs-dev/reviews/runtime_qa_checklist.md` on Android Chrome and Firefox.
+- Force missing-capability and denied-permission paths; confirm graceful behaviour.
+- Record device/browser results and residual limitations in the final report.
 
 ## Commit and push
 

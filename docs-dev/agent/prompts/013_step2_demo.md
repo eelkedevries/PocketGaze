@@ -9,9 +9,23 @@ proxy as the main demo, with feature subprocess panels under the master control.
 
 Step 2 demo UI only. Reuse the module from `012`.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.2, §2.5, §2.6.
+2. `docs-dev/reviews/runtime_qa_checklist.md` (camera rows).
+3. Source: the feature module (`012`); `src/components/StepPage.tsx`.
+
+## Dependencies
+
+This prompt assumes:
+- `012_feature_extraction.md` is complete (feature module under `src/lib/`).
+- `008`/`009` (camera/timing) are complete.
+If any is missing, stop and report.
+
 ## Context
 
-Implements specification §3.2 (Step 2 demo and panels), §2.5, §2.6.
+Implements the Step 2 demo and panels using the shared master control (§2.5).
 
 ## Required changes
 
@@ -27,23 +41,29 @@ Implements specification §3.2 (Step 2 demo and panels), §2.5, §2.6.
 Do not:
 - add head pose, eye-local signal, or gaze;
 - add a second show/hide control;
-- export data.
+- add file export.
 
 ## Acceptance criteria
 
 The task is complete when:
 - Step 2 shows live feature overlays on the camera preview;
 - feature panels appear only when "Show implementation details" is enabled;
-- degraded tracking is handled gracefully;
-- `npm run build` passes.
+- degraded tracking is handled gracefully.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open Step 2, start the camera, and confirm live landmark/eye/iris overlays.
+- Cover an eye / look away; confirm graceful degradation and quality indicators.
+- Toggle the master control; confirm the feature panels show/hide.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (camera; toggle rows).
 
 ## Commit and push
 

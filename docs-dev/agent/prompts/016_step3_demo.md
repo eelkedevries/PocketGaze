@@ -7,11 +7,24 @@ visualisation with a head-motion quality label as the main demo, plus subprocess
 
 ## Scope
 
-Step 3 demo UI only. Reuse modules from `014` and `015`.
+Step 3 demo UI only. Reuse modules from `014b` and `015`.
+
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.3, §6.4, §2.5, §2.6.
+2. `docs-dev/reviews/runtime_qa_checklist.md` (camera rows).
+3. Source: the head-pose (`014b`) and motion-quality (`015`) modules.
+
+## Dependencies
+
+This prompt assumes:
+- `014b_head_pose_estimation.md` and `015_motion_quality_labelling.md` are complete.
+If any is missing, stop and report.
 
 ## Context
 
-Implements specification §3.3 (Step 3 demo and panels), §2.5, §2.6.
+Implements the Step 3 demo and panels using the shared master control (§2.5).
 
 ## Required changes
 
@@ -27,22 +40,27 @@ Implements specification §3.3 (Step 3 demo and panels), §2.5, §2.6.
 Do not:
 - add eye-local signal, gaze, or events;
 - add a second show/hide control;
-- export data.
+- add file export.
 
 ## Acceptance criteria
 
 The task is complete when:
 - Step 3 shows live head pose with a motion-quality label;
-- pose panels appear only when "Show implementation details" is enabled;
-- `npm run build` passes.
+- pose panels appear only when "Show implementation details" is enabled.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open Step 3, start the camera, and confirm a live pose readout and motion-quality label.
+- Toggle the master control; confirm the pose panels show/hide.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (camera; toggle rows).
 
 ## Commit and push
 

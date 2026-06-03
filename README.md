@@ -74,10 +74,11 @@ lockfile (`npm ci`), which is what CI uses.
 - **Base path:** `/PocketGaze/` (configured in `vite.config.ts`).
 
 Deployment uses the `Deploy to GitHub Pages` GitHub Actions workflow
-(`.github/workflows/deploy-pages.yml`). It is triggered manually
-(`workflow_dispatch`) and publishes only the built `dist/` output. A separate
-`Check build` workflow runs on every push to build the site, run the
-public-build safety check, validate prompt numbering, and scan for secrets.
+(`.github/workflows/deploy-pages.yml`). It runs **automatically on every push to
+`main`** (and can also be triggered manually via `workflow_dispatch`), and
+publishes only the built `dist/` output. A separate `Check build` workflow runs
+on every push to build the site, run the public-build safety check, validate the
+prompt files, and scan for secrets.
 
 To enable Pages once: **Settings → Pages → Build and deployment → Source: GitHub
 Actions**. The repository must be public for GitHub Pages on the free plan.

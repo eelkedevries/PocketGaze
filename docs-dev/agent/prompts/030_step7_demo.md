@@ -9,9 +9,22 @@ coordinates with content-relative coordinates for content that scrolls/moves/tra
 
 Step 7 demo UI only. Reuse modules from `028` and `029`.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.7, §6.2, §2.5, §2.6.
+2. `docs-dev/reviews/runtime_qa_checklist.md` (mobile; toggle rows).
+3. Source: the stimulus/viewport (`028`) and content-mapping (`029`) modules.
+
+## Dependencies
+
+This prompt assumes:
+- `028_stimulus_viewport_logging.md` and `029_content_coordinate_mapping.md` are complete.
+If any is missing, stop and report.
+
 ## Context
 
-Implements specification §3.7 (Step 7 demo and panels), §6.2, §2.5, §2.6.
+Implements the Step 7 demo and panels using the shared master control (§2.5).
 
 ## Required changes
 
@@ -32,16 +45,22 @@ Do not:
 
 The task is complete when:
 - Step 7 shows screen vs content coordinates under scroll/zoom/transform;
-- content-mapping panels appear only when "Show implementation details" is enabled;
-- `npm run build` passes.
+- content-mapping panels appear only when "Show implementation details" is enabled.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open Step 7 and scroll/zoom the content; confirm screen vs content coordinates diverge as
+  expected and the framing makes the point clear.
+- Toggle the master control; confirm the content-mapping panels show/hide.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (mobile; toggle rows).
 
 ## Commit and push
 

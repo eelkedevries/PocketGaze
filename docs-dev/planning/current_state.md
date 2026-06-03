@@ -52,12 +52,24 @@ gap is work still to be done.
   vocabulary, domain rules, naming/voice, technology decisions), and
   `003_plan_project_prompt_queue.md` generates the *full ordered* implementation prompt
   queue (Phases A–I, browser-local, incremental).
-- **Implementation prompt queue generated:** prompts `004`–`033` now exist, covering
-  Phases A–I (content & shell; capture & timing; features; head/phone motion; eye-local &
-  gaze; calibration; filtering & events; content mapping; export & hardening). They are the
-  ordered work queue for building the site in full, browser-local and incremental, and have
-  **not been run yet**.
-- **Next planned prompt:** run `004_step0_overview_content.md`, then proceed in order.
+- **Implementation prompt queue generated and hardened:** prompts `004`–`033` (plus
+  `007b_shared_data_session_model.md` and the `014` head-pose method spike + `014b`
+  implementation split) cover Phases A–I (content & shell; shared data/session model;
+  capture & timing; features; head/phone motion; eye-local & gaze; calibration; filtering &
+  events; content mapping; export & hardening). They are the ordered, browser-local,
+  incremental work queue and have **not been run yet**.
+- **Queue hardening (from review feedback):** every implementation prompt now has
+  `Required reading`, `Dependencies`, split `Automated checks` / `Manual verification`, and
+  (where relevant) `Data contracts touched`. `validate-prompts.sh` now enforces prompt
+  structure and rejects unresolved `<placeholders>`. Added
+  `docs-dev/reviews/runtime_qa_checklist.md`. Pure-logic prompts request `node --test`
+  unit tests via `npm run test`.
+- **Spec v1.1:** export format locked to one combined CSV (`row_type` column, blanks for
+  N/A, ms-from-start `time_ms`); shared data/session model added to the architecture;
+  head-pose method recorded as a spike decision. Deployment wording made consistent
+  (auto-deploy on push to `main`) across README/spec/current_state/workflow.
+- **Next planned prompt:** run `004_step0_overview_content.md`, then proceed in order
+  (note `007b` runs before `008`, and `014` before `014b`).
 
 ## Important caveats
 

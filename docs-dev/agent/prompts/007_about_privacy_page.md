@@ -9,10 +9,21 @@ privacy-by-default posture (local processing, no raw video stored by default).
 
 One static page plus a navigation entry. No camera or tracking.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §1.1, §2.7, §6.6.
+2. `docs-dev/planning/current_state.md`.
+3. Source: `src/components/Layout.tsx`, `src/App.tsx` (routing), `src/steps.ts`.
+
+## Dependencies
+
+This prompt assumes the scaffold shell and routing from `001_setup.md`. If routing is
+missing, stop and report.
+
 ## Context
 
-Implements specification §1.1 (purpose), §2.7 (processing and privacy posture), §6.6
-(privacy domain rule).
+Implements the portfolio purpose and privacy posture as a standalone page.
 
 ## Required changes
 
@@ -33,16 +44,21 @@ Do not:
 
 The task is complete when:
 - the about/privacy page renders and is reachable from the shell;
-- it accurately states the local-processing, no-raw-video posture;
-- `npm run build` passes.
+- it accurately states the local-processing, no-raw-video posture.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open the about/privacy page from the shell link.
+- Confirm the Step 0–7 navigation order is undisturbed.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (shell/navigation rows).
 
 ## Commit and push
 

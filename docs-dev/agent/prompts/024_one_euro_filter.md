@@ -3,24 +3,38 @@
 ## Goal
 
 Add an adaptive One Euro filter for the eye/gaze/head signals while preserving the raw
-(minimally processed) signals alongside the filtered ones.
+(minimally processed) signals alongside the filtered ones, with deterministic unit tests.
 
 ## Scope
 
 The filtering module only. No blink suppression (that is `025`), event detection (`026`),
 or Step 6 demo (`027`).
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.6, §4.1 (raw vs filtered
+   in separate columns), §4 (`filter_name`).
+2. Source: the signal modules (`017`/`019`); the `007b` session model.
+
+## Dependencies
+
+This prompt assumes:
+- `017_eye_local_signal.md` (and `019` if applicable) and `007b` are complete.
+If the signals/session model are missing, stop and report.
+
 ## Context
 
-Implements specification §3.6 (adaptive filtering, raw preservation) and §4 (raw vs
-filtered kept distinct; `filter_name` and parameters retained).
+Pure, deterministic logic — unit-tested with `node --test`.
 
 ## Required changes
 
 1. Add a One Euro filter module applied to the relevant signals, with documented,
    configurable parameters.
-2. Keep raw and filtered signals as distinct outputs so both are exportable.
-3. Retain the filter name and parameters for the export; keep logic in `src/lib/`.
+2. Keep raw and filtered signals as **separate columns** in the session model so both are
+   exportable (per §4.1).
+3. Retain the filter name and parameters for the export; add `node --test` tests (step
+   response; lag/jitter behaviour on synthetic input).
 
 ## Do not implement
 
@@ -29,20 +43,34 @@ Do not:
 - build the Step 6 demo UI (that is `027`);
 - discard the raw signal.
 
+## Data contracts touched
+
+Adds (writes into the `007b` model): filtered signal columns alongside the raw columns;
+`filter_name` and parameters.
+Preserves: the raw signal columns unchanged.
+Does not: change export format or row types.
+
 ## Acceptance criteria
 
 The task is complete when:
-- the filter produces a filtered signal while the raw signal remains available;
+- the filter produces filtered columns while the raw columns remain available;
 - filter parameters are documented and retained;
-- `npm run build` passes.
+- `npm run test` covers the filter and passes.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
+npm run test
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Confirm the filter unit tests run (not zero tests) and pass.
+- With live signals, confirm the filtered trace is smoother than the raw trace without gross
+  lag during rapid movement.
 
 ## Commit and push
 

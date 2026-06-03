@@ -3,17 +3,29 @@
 ## Goal
 
 Replace the placeholder copy on Steps 1–7 with real explanatory content (introduction,
-options/methods, outputs, limitations) drawn from the specification, while leaving the
-live-demo and subprocess areas as placeholders for later prompts.
+options/methods, outputs, limitations), while leaving the live-demo and subprocess areas as
+placeholders for later prompts.
 
 ## Scope
 
 Text content for Steps 1–7 only. Do not implement demos, camera, or tracking.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.1–§3.7, §5, §6, §7.2.
+2. `docs-dev/planning/current_state.md`.
+3. Source: `src/steps.ts`, `src/components/StepPage.tsx`.
+
+## Dependencies
+
+This prompt assumes the scaffold from `001_setup.md`. No tracking modules required. If the
+step content model is missing, stop and report.
+
 ## Context
 
-Implements specification §3.1–§3.7. Content model is `src/steps.ts`. Keep the §2.6 page
-structure and the master-control behaviour (§2.5).
+Content model is `src/steps.ts`. Keep the §2.6 page structure and the master-control
+behaviour (§2.5).
 
 ## Required changes
 
@@ -37,16 +49,22 @@ Do not:
 The task is complete when:
 - Steps 1–7 show real introduction/methods/outputs/limitations content;
 - demo and subprocess areas remain labelled placeholders;
-- content matches the spec and uses British English;
-- `npm run build` passes.
+- content matches the spec and uses British English.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Start the dev server and visit each of Steps 1–7.
+- Confirm the four content sections read correctly and demo/subprocess areas remain
+  labelled placeholders.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (shell/navigation/content rows).
 
 ## Commit and push
 

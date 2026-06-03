@@ -9,10 +9,23 @@ timing readout as the main demo, and timing subprocess panels under the master c
 
 Step 1 demo UI only. Reuse the modules from `008` and `009`.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.1, §2.5, §2.6.
+2. `docs-dev/reviews/runtime_qa_checklist.md` (camera rows).
+3. Source: the camera (`008`) and timing (`009`) modules; `src/components/StepPage.tsx`.
+
+## Dependencies
+
+This prompt assumes:
+- `008_camera_access.md` and `009_frame_timing.md` are complete.
+- The camera and timing modules exist under `src/lib/`.
+If any is missing, stop and report.
+
 ## Context
 
-Implements specification §3.1 (Step 1 demo and panels), §2.5 (master control), §2.6 (page
-structure).
+Implements the Step 1 demo and panels using the shared master control (§2.5).
 
 ## Required changes
 
@@ -27,23 +40,30 @@ structure).
 Do not:
 - add feature extraction, head pose, or gaze;
 - add a second show/hide control;
-- export data.
+- add file export.
 
 ## Acceptance criteria
 
 The task is complete when:
 - Step 1 shows a working camera preview with live FPS/timing;
 - the timing panels appear only when "Show implementation details" is enabled;
-- denied/unsupported camera is handled gracefully;
-- `npm run build` passes.
+- denied/unsupported camera is handled gracefully.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open Step 1, start the camera, and confirm preview + live FPS/timing.
+- Enable "Show implementation details"; confirm the timing panels appear (and hide when
+  disabled).
+- Deny the camera; confirm a graceful state. Stop the camera; confirm the stream releases.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (camera; toggle rows).
 
 ## Commit and push
 

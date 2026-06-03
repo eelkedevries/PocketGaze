@@ -10,10 +10,23 @@ signal types visibly and terminologically distinct.
 
 Step 4 demo UI only. Reuse modules from `017` and `019`.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.4, §6.2, §7.2, §2.5, §2.6.
+2. `docs-dev/reviews/runtime_qa_checklist.md` (camera rows).
+3. Source: the eye-local (`017`) and screen-gaze (`019`) modules.
+
+## Dependencies
+
+This prompt assumes:
+- `017_eye_local_signal.md` is complete; `019_screen_gaze_integration.md` is complete
+  (or its recorded fallback).
+If `017` is missing, stop and report.
+
 ## Context
 
-Implements specification §3.4 (Step 4 demo and panels), §6.2 (signal separation), §7.2
-(glossary), §2.5, §2.6.
+Implements the Step 4 demo and panels using the shared master control (§2.5).
 
 ## Required changes
 
@@ -29,23 +42,29 @@ Implements specification §3.4 (Step 4 demo and panels), §6.2 (signal separatio
 Do not:
 - add calibration (Phase F), filtering, or events;
 - add a second show/hide control;
-- export data.
+- add file export.
 
 ## Acceptance criteria
 
 The task is complete when:
 - Step 4 shows a live eye-local trace and (when available) a distinct screen-gaze estimate;
 - the two signals are clearly separated in UI and wording;
-- signal panels appear only when "Show implementation details" is enabled;
-- `npm run build` passes.
+- signal panels appear only when "Show implementation details" is enabled.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open Step 4, start the camera, and confirm a live eye-local trace.
+- Confirm screen gaze is clearly labelled as separate and shows "unavailable" pre-calibration.
+- Toggle the master control; confirm the signal panels show/hide.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (camera; toggle rows).
 
 ## Commit and push
 

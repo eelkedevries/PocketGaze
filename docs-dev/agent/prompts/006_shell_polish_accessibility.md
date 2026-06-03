@@ -10,11 +10,22 @@ adding any tracking functionality.
 
 Shell, layout, and the master control only. No camera or step-demo logic.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §2.4, §2.5, §2.8.
+2. `docs-dev/reviews/runtime_qa_checklist.md`.
+3. Source: `src/components/Layout.tsx`, `src/context/ImplementationDetailsContext.tsx`,
+   `src/index.css`.
+
+## Dependencies
+
+This prompt assumes the scaffold shell and the master-control context from `001_setup.md`.
+If they are missing, stop and report.
+
 ## Context
 
-Implements specification §2.4 (app shell), §2.5 (master control, optional persistence),
-§2.8 (device targets). Master-control state lives in the React context under
-`src/context/`.
+Master-control state lives in the React context under `src/context/`.
 
 ## Required changes
 
@@ -37,16 +48,22 @@ Do not:
 The task is complete when:
 - the master-control setting persists across reloads;
 - the shell is usable and uncluttered at narrow widths;
-- the control and nav are keyboard-accessible and labelled;
-- `npm run build` passes.
+- the control and nav are keyboard-accessible and labelled.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Toggle the control, navigate, and reload; confirm the setting persists.
+- Emulate a ~360–414px viewport; confirm no overflow and tappable nav.
+- Tab through the page; confirm focus order, visible focus, and skip-to-content.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (shell rows; mobile; toggle).
 
 ## Commit and push
 

@@ -1,6 +1,10 @@
 # Specification
 
-**Version:** 1.0 · **Last updated:** 2026-06-03
+**Version:** 1.1 · **Last updated:** 2026-06-03
+
+**Changelog:** 1.1 — locked the derived-data export format (§4.1) to a single combined
+CSV with a row-type column; added the early shared data/session model to the architecture
+(§2.3); recorded the head-pose method as a spike decision (§7.3). 1.0 — first full spec.
 
 The authoritative design canon for PocketGaze. **Only the sections actually filled below
 are binding.** A section or sub-item marked _Not yet decided_ imposes no constraint and is
@@ -91,8 +95,16 @@ Conventions (the agent may extend, not contradict):
   extraction adapters, head pose, signal types, filtering/events, export.
 - `src/types/` (to be added) — shared TypeScript types, including the export schema (§4).
 
+**Shared data/session model first.** Before any camera/tracking module is built, a shared
+data model and in-memory session store are defined (the §4 row types and field groups, with
+raw-vs-filtered separation and processing metadata) so that capture, features, pose,
+signals, calibration, events, and content mapping all write to **one** agreed shape rather
+than inventing their own. Export (§4) serialises this store; it does not define new shapes.
+
 Pipeline logic (capture, features, pose, signals, filtering, export) should live in
-testable modules under `src/lib`, kept separate from React presentation.
+testable modules under `src/lib`, kept separate from React presentation. Pure, deterministic
+logic (filtering, calibration mapping, suppression, event detection, content mapping, export
+serialisation) is unit-tested with `node --test` via `npm run test`.
 
 ### 2.4 App shell and navigation
 
@@ -286,14 +298,21 @@ PocketGaze exports **derived data, not raw video** (§2.7). The schema below is 
 **candidate** export contract from `overview.md` §4; exact field names and the on-disk
 format become binding when export is implemented (Phase I) and recorded here.
 
-### 4.1 Format
+### 4.1 Format (locked)
 
-- A combined, row-typed dataset (one file) is the first export format. **File format: open**
-  (CSV and/or JSON-lines are the candidates).
-- **Raw (minimally processed) and filtered signals are kept in distinct columns/fields** so
-  the data stays reanalysable.
+- The first (and default) export is a **single combined CSV file** with an explicit
+  **`row_type` column** (`sample`/`event`/`calibration`/`stimulus`/`quality`).
+- Fields that do not apply to a given row are left **blank/empty** (not `0`); consumers
+  must treat blank as "not applicable", distinct from a real zero.
+- **Raw (minimally processed) and filtered signals occupy separate columns** (e.g. a raw
+  column and its filtered counterpart) so the data stays reanalysable; raw and filtered are
+  not split across different row types.
+- **Timestamp convention:** `time_ms` is milliseconds from session start (a monotonic
+  clock), shared across all subsystems; absolute wall-clock time is not required.
 - Each export carries **processing metadata** (model, filter, pipeline, data-flow) for
-  reproducibility.
+  reproducibility (see the Processing/data-flow field group in §4.3).
+- A combined CSV is the locked first format; additional formats (e.g. JSON-lines) may be
+  added later but must not replace it without a spec change.
 
 ### 4.2 Row types
 
@@ -397,7 +416,7 @@ browser support, and exposed timestamp/quality/export fields — background §9)
 |---|---|---|
 | Capture & timing | `getUserMedia`; `requestVideoFrameCallback` (+ fallback) | open |
 | Feature extraction | Human; MediaPipe Tasks Vision / FaceLandmarker Web | open (choose one primary) |
-| Head pose | library pose output; OpenCV.js `solvePnP`; Procrustes-style normalisation | open |
+| Head pose | library pose output; OpenCV.js `solvePnP`; Procrustes-style normalisation | open — decided by the `014` method spike |
 | Eye-local signal | iris-proxy geometry from the chosen landmark library | open |
 | Screen gaze | WebEyeTrack _(spike)_; WebGazer.js (baseline/fallback only) | open |
 | Calibration | custom follow-the-dots task + JS regression; model personalisation if available | open |
@@ -431,6 +450,12 @@ version bump):
    metadata (§4); events use the **candidate-label vocabulary** (§5).
 10. The **signal-type distinction** (eye-local / screen-gaze / content-mapped) is central
     and must be preserved in UI, terminology, and export (§6.2, §7.2).
+11. The default export is a **single combined CSV** with a `row_type` column and blank
+    cells for non-applicable fields; `time_ms` is milliseconds from session start (§4.1).
+12. A **shared data/session model** is defined before camera/tracking work; all modules
+    write to it and export serialises it (§2.3).
+13. Pure pipeline logic is **unit-tested** with `node --test` via `npm run test`; UI and
+    content remain test-light (overrides the default no-tests convention for those modules).
 
 ---
 
@@ -438,9 +463,11 @@ version bump):
 
 Tracked items deliberately left open (no constraint until decided and moved to §8):
 
-- The primary feature-extraction library (Human vs MediaPipe FaceLandmarker Web).
-- Whether to integrate WebEyeTrack for screen gaze (pending spike).
-- The export file format (CSV vs JSON-lines) and the final, exact field names.
-- The head-pose method (library pose vs OpenCV.js `solvePnP`).
+- The primary feature-extraction library (Human vs MediaPipe FaceLandmarker Web) — decided
+  by the `011` spike.
+- Whether to integrate WebEyeTrack for screen gaze — decided by the `018` spike.
+- The head-pose method (library pose vs OpenCV.js `solvePnP` vs Procrustes) — decided by the
+  `014` spike.
+- The final, exact CSV field names (the format and conventions are now locked in §4.1).
 - Persistence mechanism for the master control setting.
 - Whether Step 0 includes a pipeline diagram demo.

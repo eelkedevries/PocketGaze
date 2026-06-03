@@ -9,10 +9,23 @@ traces together and cautiously-labelled candidate events, with subprocess panels
 
 Step 6 demo UI only. Reuse modules from `024`–`026`.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.6, §5, §2.5, §2.6.
+2. `docs-dev/reviews/runtime_qa_checklist.md` (camera; toggle rows).
+3. Source: the filter (`024`), suppression (`025`), and event (`026`) modules.
+
+## Dependencies
+
+This prompt assumes:
+- `024_one_euro_filter.md`, `025_blink_quality_suppression.md`, and
+  `026_event_detection.md` are complete.
+If any is missing, stop and report.
+
 ## Context
 
-Implements specification §3.6 (Step 6 demo and panels), §5 (candidate labelling), §2.5,
-§2.6.
+Implements the Step 6 demo and panels using the shared master control (§2.5).
 
 ## Required changes
 
@@ -35,16 +48,22 @@ Do not:
 
 The task is complete when:
 - Step 6 shows raw vs filtered traces and candidate events;
-- filtering/event panels appear only when "Show implementation details" is enabled;
-- `npm run build` passes.
+- filtering/event panels appear only when "Show implementation details" is enabled.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Open Step 6, start the camera, and confirm raw vs filtered traces plus candidate events
+  with cautious labels.
+- Toggle the master control; confirm the filtering/event panels show/hide.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (camera; toggle rows).
 
 ## Commit and push
 

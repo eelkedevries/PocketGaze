@@ -10,9 +10,21 @@ PocketGaze and the seven-step pipeline.
 Content and presentation for Step 0 only. Implement only the work described here. Do not
 add camera, tracking, or any other step's content.
 
+## Required reading
+
+Read before editing:
+1. `docs-dev/reference/primary_authoritative/specification.md` §3.0, §6, §7.2.
+2. `docs-dev/planning/current_state.md`.
+3. Source: `src/steps.ts`, `src/components/StepPage.tsx`.
+
+## Dependencies
+
+This prompt assumes the scaffold from `001_setup.md` (step pages, shared shell, master
+control). No tracking modules are required. If the step-page shell is missing, stop and
+report rather than improvising.
+
 ## Context
 
-Implements specification §3.0 (Step 0 — Overview), §6 (domain rules), §7.2 (glossary).
 Step content currently lives in `src/steps.ts`; Step 0 uses the shared step-page shell.
 
 ## Required changes
@@ -37,16 +49,22 @@ Do not:
 The task is complete when:
 - Step 0 renders the new overview content with the §2.6 sections;
 - the signal-type distinction and master-control usage are explained;
-- no functional/tracking code was added;
-- `npm run build` passes.
+- no functional/tracking code was added.
 
-## Checks
+## Automated checks
 
 ```bash
 npm run build
 bash scripts/check-public-build.sh dist
 bash scripts/validate-prompts.sh
 ```
+
+## Manual verification
+
+- Start the dev server and open Step 0.
+- Confirm the overview content renders with the expected sections.
+- Toggle "Show implementation details" and confirm the page still behaves correctly.
+- See `docs-dev/reviews/runtime_qa_checklist.md` (shell/navigation/content rows).
 
 ## Commit and push
 
