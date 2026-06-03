@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { step1Demo } from './step1';
+import { step2Demo } from './step2';
 
 // Per-step live demos (specification §2.3, §2.6). A step that provides a demo
 // supplies three pieces sharing state via a provider that StepPage mounts around
@@ -17,4 +18,5 @@ export interface StepDemo {
 /** Demos keyed by step slug. Steps without an entry render the standard shell. */
 export const stepDemos: Record<string, StepDemo> = {
   'step-1': step1Demo,
+  'step-2': step2Demo,
 };

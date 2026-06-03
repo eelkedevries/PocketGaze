@@ -87,3 +87,35 @@ export function averageVisibility(landmarks: LandmarkLike[], indices: readonly n
   }
   return sum / indices.length;
 }
+
+export interface Bounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+/**
+ * Axis-aligned bounding box of landmark positions at the given indices, with an
+ * optional padding (in the same normalised units) applied on every side.
+ */
+export function landmarkBounds(
+  landmarks: LandmarkLike[],
+  indices: readonly number[],
+  padding = 0,
+): Bounds {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const i of indices) {
+    const p = landmarks[i];
+    if (p.x < minX) minX = p.x;
+    if (p.y < minY) minY = p.y;
+    if (p.x > maxX) maxX = p.x;
+    if (p.y > maxY) maxY = p.y;
+  }
+  return {
+    minX: minX - padding,
+    minY: minY - padding,
+    maxX: maxX + padding,
+    maxY: maxY + padding,
+  };
+}

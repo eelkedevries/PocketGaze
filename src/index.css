@@ -320,6 +320,7 @@ body {
 }
 
 .camera-preview__stage {
+  position: relative;
   width: 100%;
   aspect-ratio: 4 / 3;
   background: #06090d;
@@ -343,6 +344,27 @@ body {
   text-align: center;
   color: var(--colour-muted);
   font-size: 0.9rem;
+}
+
+/* Overlay slot rendered inside the camera stage (e.g. landmark canvas). */
+.camera-preview__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Step 2 feature-overlay demo */
+.feature-demo {
+  display: grid;
+  gap: 1rem;
+}
+
+.feature-overlay {
+  width: 100%;
+  height: 100%;
+  display: block;
+  /* Mirror to match the mirrored front-camera preview. */
+  transform: scaleX(-1);
 }
 
 .camera-preview__consent {

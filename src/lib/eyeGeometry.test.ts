@@ -6,6 +6,7 @@ import {
   isEyeOpen,
   landmarkCentroid,
   averageVisibility,
+  landmarkBounds,
   EAR_BLINK_THRESHOLD,
   EAR_CLOSED,
   EAR_OPEN,
@@ -149,5 +150,34 @@ describe('averageVisibility', () => {
       [1, pt(0, 0)], // no visibility
     ]);
     assert.ok(Math.abs(averageVisibility(lms, [0, 1]) - 0.5) < 1e-9);
+  });
+});
+
+// landmarkBounds -----------------------------------------------------------
+
+describe('landmarkBounds', () => {
+  it('returns the tight bounding box of the given landmarks', () => {
+    const lms = makeLandmarks([
+      [0, pt(0.2, 0.3)],
+      [1, pt(0.6, 0.1)],
+      [2, pt(0.4, 0.5)],
+    ]);
+    const b = landmarkBounds(lms, [0, 1, 2]);
+    assert.ok(Math.abs(b.minX - 0.2) < 1e-9);
+    assert.ok(Math.abs(b.maxX - 0.6) < 1e-9);
+    assert.ok(Math.abs(b.minY - 0.1) < 1e-9);
+    assert.ok(Math.abs(b.maxY - 0.5) < 1e-9);
+  });
+
+  it('applies padding on every side', () => {
+    const lms = makeLandmarks([
+      [0, pt(0.4, 0.4)],
+      [1, pt(0.6, 0.6)],
+    ]);
+    const b = landmarkBounds(lms, [0, 1], 0.1);
+    assert.ok(Math.abs(b.minX - 0.3) < 1e-9);
+    assert.ok(Math.abs(b.maxX - 0.7) < 1e-9);
+    assert.ok(Math.abs(b.minY - 0.3) < 1e-9);
+    assert.ok(Math.abs(b.maxY - 0.7) < 1e-9);
   });
 });

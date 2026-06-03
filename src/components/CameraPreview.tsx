@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   CameraError,
   isCameraSupported,
@@ -25,9 +25,19 @@ interface CameraPreviewProps {
    * Pass a stable callback (e.g. via `useCallback`).
    */
   onVideoElement?: (video: HTMLVideoElement | null) => void;
+  /**
+   * Optional content rendered inside the preview stage, on top of the video,
+   * only while the camera is active (e.g. a landmark-overlay canvas). It fills
+   * the stage and is mirrored to match the front-camera preview.
+   */
+  overlay?: ReactNode;
 }
 
-export default function CameraPreview({ onStreamChange, onVideoElement }: CameraPreviewProps) {
+export default function CameraPreview({
+  onStreamChange,
+  onVideoElement,
+  overlay,
+}: CameraPreviewProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [status, setStatus] = useState<Status>('idle');
@@ -111,6 +121,11 @@ export default function CameraPreview({ onStreamChange, onVideoElement }: Camera
             {status === 'requesting'
               ? 'Starting camera…'
               : 'The camera preview will appear here once you start it.'}
+          </div>
+        )}
+        {status === 'active' && overlay && (
+          <div className="camera-preview__overlay" aria-hidden="true">
+            {overlay}
           </div>
         )}
       </div>

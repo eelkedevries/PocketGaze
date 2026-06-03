@@ -53,6 +53,11 @@ export interface FaceFeatures {
   rightEye: EyeFeatures;
   /** Mean visibility across a spread of face landmarks (0-1). */
   faceQuality: number;
+  /**
+   * Raw normalised landmarks (0-1) for the detected face, so callers can draw
+   * overlays. Not written to the session model — derived fields are.
+   */
+  landmarks: LandmarkLike[];
 }
 
 export class FaceFeatureExtractor {
@@ -202,5 +207,6 @@ function extractFeatures(landmarks: LandmarkLike[]): FaceFeatures {
       quality: averageVisibility(landmarks, RIGHT_EYE_EAR_IDX),
     },
     faceQuality: averageVisibility(landmarks, FACE_QUALITY_IDX),
+    landmarks,
   };
 }
