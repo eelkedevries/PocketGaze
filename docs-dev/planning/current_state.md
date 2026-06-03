@@ -31,12 +31,16 @@ gap is work still to be done.
   British English for user-facing text (see `AGENTS.md`).
 - `validate-prompts.sh` extended to allow an optional uppercase `DRAFT_` marker in prompt
   filenames so draft prompts pass validation.
-- **Binding specification now exists** at
-  `docs-dev/reference/primary_authoritative/specification.md` (v1.0). It locks the
-  portfolio purpose, stack/deployment, Step 0–7 structure, the single master "Show
-  implementation details" control, the browser-local-only route (native/cloud out of
-  scope), and the no-raw-video-by-default posture. Implementation libraries, the
-  derived-data export schema, and per-step demo designs are explicitly left open.
+- **Full binding specification exists** at
+  `docs-dev/reference/primary_authoritative/specification.md` (v1.0). It covers Scope,
+  Architecture (stack/deploy, routing, source layout, app shell, the single master control,
+  the repeated page contract, privacy posture, device targets), **per-step designs for
+  Step 0–7** (goal, methods, live demo, subprocess panels, outputs, limitations), the
+  derived-data **export schema** (row types + field groups) and **event vocabulary**,
+  domain rules, naming/voice + glossary, and **technology decisions** (candidate libraries
+  with locked-vs-open status). Locked decisions and an Open-decisions list are recorded.
+  Genuinely open items (primary feature library, WebEyeTrack integration, export file
+  format/field names, head-pose method, control persistence) are explicitly deferred.
 - Workflow updated: commit and push directly to `main`; GitHub Pages auto-deploys on push
   to `main`.
 
@@ -48,11 +52,9 @@ gap is work still to be done.
   vocabulary, domain rules, naming/voice, technology decisions), and
   `003_plan_project_prompt_queue.md` generates the *full ordered* implementation prompt
   queue (Phases A–I, browser-local, incremental).
-- **The committed spec is still the conservative v1.0.** Re-running
-  `002_create_specification.md` will regenerate it as the full version.
-- **Next planned prompt:** run `002_create_specification.md` (regenerate the full spec),
-  then `003_plan_project_prompt_queue.md` (generate the build queue, which proposes its
-  plan for approval before writing prompt files).
+- **Next planned prompt:** run `003_plan_project_prompt_queue.md` to generate the full
+  implementation prompt queue (Phases A–I). It proposes its plan for approval before
+  writing any prompt files.
 
 ## Important caveats
 
@@ -65,4 +67,5 @@ gap is work still to be done.
 ## Prompts run
 
 - `001_setup.md` — initial PocketGaze scaffold and eek-a-dev workflow.
-- `002_create_specification.md` — created the binding v1 specification.
+- `002_create_specification.md` — created the binding v1 specification (run twice:
+  conservative v1.0, then expanded to the full v1.0).
