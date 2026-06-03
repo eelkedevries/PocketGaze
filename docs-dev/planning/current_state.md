@@ -130,3 +130,8 @@ gap is work still to be done.
   facial transformation matrix into yaw/pitch/roll + approximate translation with a
   pose-quality proxy, written to the session model via the feature extractor. Unit-tested;
   monocular-translation caveat documented.
+- `015_motion_quality_labelling.md` — head-motion quality labelling (`src/lib/motionQuality.ts`):
+  labels samples low/moderate/uncertain from rotational speed + pose quality (documented,
+  configurable thresholds), with a stateful `HeadMotionLabeller` and an `headMotionExcluded`
+  predicate for rejecting uncertain intervals. Added `head_motion_label` to sample rows
+  (shared `HeadMotionFields`). Unit-tested.

@@ -121,13 +121,21 @@ export interface BlinkEyeStateFields {
   blink_state?: BlinkState;
 }
 
+/**
+ * Head-motion contamination label (specification §3.3, §5). Attached to both
+ * samples and events so uncertain intervals can be excluded from later event
+ * detection.
+ */
+export interface HeadMotionFields {
+  head_motion_label?: HeadMotionLabel;
+}
+
 /** Event fields (only meaningful on `event` rows). */
 export interface EventFields {
   event_type?: EventType;
   event_start_ms?: number;
   event_end_ms?: number;
   event_confidence?: number;
-  head_motion_label?: HeadMotionLabel;
 }
 
 /** Task / stimulus fields (calibration and stimulus rows). */
@@ -162,12 +170,17 @@ export interface SampleRow
     HeadPoseFields,
     TrackingQualityFields,
     BlinkEyeStateFields,
+    HeadMotionFields,
     ProcessingMetadataFields {
   row_type: 'sample';
 }
 
 /** A detected candidate event (blink, fixation/saccade candidate, tracking loss, ...). */
-export interface EventRow extends TimingFields, EventFields, ProcessingMetadataFields {
+export interface EventRow
+  extends TimingFields,
+    EventFields,
+    HeadMotionFields,
+    ProcessingMetadataFields {
   row_type: 'event';
   /** Events always carry a label from the §5 vocabulary. */
   event_type: EventType;
