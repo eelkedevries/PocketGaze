@@ -267,6 +267,15 @@ body {
   font-size: 0.85rem;
 }
 
+.site-footer__link {
+  color: var(--colour-accent);
+  text-decoration: none;
+}
+
+.site-footer__link:hover {
+  text-decoration: underline;
+}
+
 /* Narrow-viewport (mobile) adjustments */
 @media (max-width: 480px) {
   .site-header__bar {

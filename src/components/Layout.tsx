@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { steps } from '../steps';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
 
@@ -45,6 +45,9 @@ export default function Layout() {
         <p>
           PocketGaze — portfolio scaffold. Placeholder pages only; no camera or
           tracking functionality yet.
+        </p>
+        <p>
+          <Link to="/about" className="site-footer__link">About &amp; Privacy</Link>
         </p>
       </footer>
     </div>

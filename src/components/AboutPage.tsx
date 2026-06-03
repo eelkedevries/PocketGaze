@@ -1,0 +1,69 @@
+export default function AboutPage() {
+  return (
+    <article className="step-page">
+      <h1 className="step-page__title">About &amp; Privacy</h1>
+
+      <section className="step-section">
+        <h2>What PocketGaze is</h2>
+        <p>
+          PocketGaze is a portfolio project that demonstrates how smartphone-camera eye
+          tracking can be built in practice. It exists to show potential employers,
+          collaborators, and customers that the author understands the seven-step pipeline
+          — from camera capture and face-landmark detection, through head-pose estimation,
+          eye-local signal extraction, calibrated gaze mapping, noise filtering, candidate
+          event detection, and finally content-coordinate alignment. Each step has its own
+          page with an explanation and a live demo (demos are added incrementally).
+        </p>
+        <p>
+          The site is entirely static. It runs in your browser, is hosted on GitHub Pages,
+          and has no server-side component. There is no backend, no database, and no
+          account system.
+        </p>
+      </section>
+
+      <section className="step-section">
+        <h2>Processing and privacy</h2>
+        <p>
+          When the step demos are active, all processing happens locally on your device.
+          Camera frames are analysed in the browser and are never sent to a remote server.
+          Raw video is not stored or uploaded by default; if a data-export feature is added
+          in a later step, it will export only derived data — signals, events, and task
+          metadata — not the video itself, and only when you choose to trigger it.
+        </p>
+        <p>
+          Landmarks, gaze estimates, head-pose values, and any task-linked eye data are
+          treated as sensitive, even though all computation stays on your device. The
+          camera is requested only when a step's demo requires it, with a clear
+          permission-and-consent flow, and the stream is released as soon as the demo
+          stops.
+        </p>
+      </section>
+
+      <section className="step-section">
+        <h2>What this site does not do</h2>
+        <ul>
+          <li>Send camera frames, landmarks, or gaze data to any server.</li>
+          <li>Store or upload raw video by default.</li>
+          <li>Collect, log, or share any data you generate with third parties.</li>
+          <li>
+            Implement server-side or cloud processing — the browser-local route is the
+            only one built here (cloud and native-app routes may be described as
+            explanatory content but are not implemented).
+          </li>
+          <li>
+            Claim regulatory compliance (GDPR, HIPAA, or otherwise). This is a portfolio
+            and educational project, not a commercial product.
+          </li>
+        </ul>
+      </section>
+
+      <section className="step-section">
+        <h2>Source code</h2>
+        <p>
+          The source code is publicly available on GitHub. The repository includes
+          development documentation that is never included in the deployed build output.
+        </p>
+      </section>
+    </article>
+  );
+}

@@ -1,5 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
+import AboutPage from './components/AboutPage';
 import StepPage from './components/StepPage';
 import { ImplementationDetailsProvider } from './context/ImplementationDetailsContext';
 import { steps } from './steps';
@@ -20,6 +21,7 @@ export default function App() {
                 element={<StepPage step={step} />}
               />
             ))}
+            <Route path="about" element={<AboutPage />} />
             <Route path="*" element={<Navigate to="/step-0" replace />} />
           </Route>
         </Routes>
