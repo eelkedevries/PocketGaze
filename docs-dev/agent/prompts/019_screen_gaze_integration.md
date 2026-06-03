@@ -1,15 +1,18 @@
-# Task: Integrate optional screen-gaze estimation
+# Task: Integrate optional screen-gaze estimation (provider interface + regression provider)
 
 ## Goal
 
-Add an optional screen-gaze estimation path (per the `018` decision), producing screen x/y
-with availability and confidence in the shared session model, kept strictly distinct from
-the eye-local signal.
+Add the screen-gaze provider abstraction (per the `018b` decision): a common
+`ScreenGazeProvider` interface, a registry/selector defaulting to provider **A**, and
+provider **A** itself — a custom regression mapping that applies a fitted eye-local → screen
+mapping — producing screen x/y with availability and confidence in the shared session model,
+kept strictly distinct from the eye-local signal.
 
 ## Scope
 
-The screen-gaze module only. No calibration UI (that is Phase F), no Step 4 demo UI (that
-is `020`).
+The provider interface + registry + provider **A** (regression mapping apply) only. The
+WebEyeTrack adapter (provider **B**) is `019b`; calibration fitting is `022`; the Step 4 demo
+and its selector are `020`. No calibration UI here, no Step 4 demo UI.
 
 ## Required reading
 
@@ -32,32 +35,41 @@ Screen gaze must remain a separate signal from eye-local (§6.2).
 
 ## Required changes
 
-1. Add a screen-gaze module that outputs `gaze_x/y`, `gaze_available`, and
-   `gaze_confidence` into the session model, self-hosting any assets.
-2. Keep eye-local and screen-gaze separate in code and types; never relabel eye-local as
+1. Define a framework-agnostic `ScreenGazeProvider` interface (id, label,
+   `requiresCalibration`, optional `init`/`dispose`, and `estimate(input)`), a shared
+   `ScreenGazeInput`/`ScreenGazeEstimate` shape, and a helper mapping an estimate to the §4
+   screen-gaze fields (`gaze_x_raw`, `gaze_y_raw`, `gaze_available`, `gaze_confidence`,
+   `signal_type: 'screen_gaze'`).
+2. Add a registry/selector holding the available providers with a selected provider,
+   defaulting to provider **A**.
+3. Add provider **A**: a custom regression mapping that, given a fitted linear
+   eye-local → screen mapping, applies it to the eye-local signal (`017`); with no mapping it
+   reports `gaze_available: false`. (Fitting the mapping is `022`.)
+4. Keep eye-local and screen-gaze separate in code and types; never relabel eye-local as
    screen gaze.
-3. Make screen gaze degrade cleanly to "unavailable" when no valid mapping/model exists.
 
 ## Do not implement
 
 Do not:
-- build the calibration task (Phase F) or the Step 4 demo UI (`020`);
+- install `webeyetrack`/TensorFlow.js or build provider **B** (that is `019b`);
+- fit the calibration mapping (`022`) or build the Step 4 demo UI/selector (`020`);
 - present screen gaze as validated/accurate without calibration (§6.2, §6.3);
 - add a second show/hide control.
 
 ## Data contracts touched
 
-Adds (writes into the `007b` model): `gaze_x`, `gaze_y`, `gaze_available`,
-`gaze_confidence`.
+Writes into the `007b` model: `gaze_x_raw`, `gaze_y_raw`, `gaze_available`,
+`gaze_confidence`, `signal_type` (`screen_gaze`).
 Preserves: eye-local fields and their separation from screen gaze.
 Does not: change export format or store raw video.
 
 ## Acceptance criteria
 
 The task is complete when:
-- the module produces screen-gaze fields with availability/confidence (or the `018`
-  fallback);
-- eye-local and screen-gaze signals stay distinct.
+- a `ScreenGazeProvider` interface, a registry defaulting to provider **A**, and provider
+  **A** exist; provider **A** applies a fitted mapping and degrades to "unavailable" with no
+  mapping;
+- the estimate maps to the §4 screen-gaze fields; eye-local and screen-gaze stay distinct.
 
 ## Automated checks
 
