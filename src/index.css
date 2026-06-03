@@ -367,6 +367,44 @@ body {
   transform: scaleX(-1);
 }
 
+/* Step 4 screen-gaze provider selector */
+.gaze-selector {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--colour-border);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--colour-surface);
+}
+
+.gaze-selector__legend {
+  font-weight: 600;
+  padding: 0 0.3rem;
+}
+
+.gaze-selector__option {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.gaze-selector__note {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Step 4 eye-local / screen-gaze visualisation */
+.signal-stage {
+  width: 100%;
+  height: 180px;
+  display: block;
+  border: 1px solid var(--colour-border);
+  border-radius: 0.5rem;
+  background: var(--colour-surface);
+}
+
 /* Step 3 head-motion quality label */
 .motion-label {
   display: flex;

@@ -32,22 +32,28 @@ Implements the Step 4 demo and panels using the shared master control (§2.5).
 
 1. Replace the Step 4 live-demo placeholder with a live eye-local movement trace; show an
    optional screen-gaze estimate when available, clearly labelled as a different signal.
-2. Add subprocess panels (per-eye and combined eye-local coordinates; screen-gaze
+2. Add an always-visible screen-gaze provider selector (separate from the master control)
+   switching between provider A (custom regression, default) and provider B (WebEyeTrack,
+   opt-in); provider B loads on selection so TensorFlow.js stays out of the default bundle.
+3. Add subprocess panels (per-eye and combined eye-local coordinates; screen-gaze
    coordinates with availability/confidence; which signal is selected and why) shown only
    when the master control is enabled.
-3. Make the eye-local vs screen-gaze distinction explicit in the UI copy.
+4. Make the eye-local vs screen-gaze distinction explicit in the UI copy.
 
 ## Do not implement
 
 Do not:
 - add calibration (Phase F), filtering, or events;
-- add a second show/hide control;
+- add a second show/hide master control (the provider selector is a demo control, not a
+  details toggle);
+- eagerly load WebEyeTrack/TensorFlow.js into the default bundle;
 - add file export.
 
 ## Acceptance criteria
 
 The task is complete when:
 - Step 4 shows a live eye-local trace and (when available) a distinct screen-gaze estimate;
+- an always-visible selector switches providers A/B (default A); provider B loads on selection;
 - the two signals are clearly separated in UI and wording;
 - signal panels appear only when "Show implementation details" is enabled.
 
