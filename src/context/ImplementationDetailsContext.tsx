@@ -17,6 +17,24 @@ import {
 // In this scaffold the toggle only shows or hides placeholder panels; the real
 // subprocess visualisations are added by later prompts.
 
+const STORAGE_KEY = 'pocketgaze-show-details';
+
+function readStoredValue(): boolean {
+  try {
+    return localStorage.getItem(STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function writeStoredValue(value: boolean): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(value));
+  } catch {
+    // storage unavailable, silently ignore
+  }
+}
+
 interface ImplementationDetailsContextValue {
   showDetails: boolean;
   toggleDetails: () => void;
@@ -28,12 +46,24 @@ const ImplementationDetailsContext = createContext<
 >(undefined);
 
 export function ImplementationDetailsProvider({ children }: { children: ReactNode }) {
-  const [showDetails, setShowDetails] = useState(false);
-  const toggleDetails = useCallback(() => setShowDetails((value) => !value), []);
+  const [showDetails, _setShowDetails] = useState(readStoredValue);
+
+  const setShowDetails = useCallback((value: boolean) => {
+    _setShowDetails(value);
+    writeStoredValue(value);
+  }, []);
+
+  const toggleDetails = useCallback(() => {
+    _setShowDetails((prev) => {
+      const next = !prev;
+      writeStoredValue(next);
+      return next;
+    });
+  }, []);
 
   const value = useMemo(
     () => ({ showDetails, toggleDetails, setShowDetails }),
-    [showDetails, toggleDetails],
+    [showDetails, toggleDetails, setShowDetails],
   );
 
   return (

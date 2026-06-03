@@ -9,6 +9,7 @@ export default function Layout() {
 
   return (
     <div className="layout">
+      <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="site-header__bar">
           <span className="site-header__brand">PocketGaze</span>
@@ -36,7 +37,7 @@ export default function Layout() {
         </nav>
       </header>
 
-      <main className="site-main">
+      <main id="main-content" className="site-main">
         <Outlet />
       </main>
 
