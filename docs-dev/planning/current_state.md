@@ -42,9 +42,17 @@ gap is work still to be done.
 
 ## In progress / next
 
-- **Next planned prompt:** `003_DRAFT_plan_project_prompt_queue.md` — create the ordered,
-  numbered implementation prompt queue for building PocketGaze. Still a **draft, not ready
-  to run**.
+- **Prompts 002 and 003 are now finalised, runnable prompts** (the `DRAFT_` markers were
+  removed): `002_create_specification.md` was expanded to generate the *full* binding
+  specification (architecture, per-step Step 0–7 designs, data-export schema, event
+  vocabulary, domain rules, naming/voice, technology decisions), and
+  `003_plan_project_prompt_queue.md` generates the *full ordered* implementation prompt
+  queue (Phases A–I, browser-local, incremental).
+- **The committed spec is still the conservative v1.0.** Re-running
+  `002_create_specification.md` will regenerate it as the full version.
+- **Next planned prompt:** run `002_create_specification.md` (regenerate the full spec),
+  then `003_plan_project_prompt_queue.md` (generate the build queue, which proposes its
+  plan for approval before writing prompt files).
 
 ## Important caveats
 
