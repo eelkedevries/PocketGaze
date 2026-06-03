@@ -18,7 +18,19 @@ gap is work still to be done.
   implementation/subprocess area, outputs, limitations.
 - **Master "Show implementation details" control** — a single site-wide toggle in the
   header (React context) that reveals or hides the optional implementation/subprocess
-  placeholder panels on each step page.
+  placeholder panels on each step page. The setting persists in `localStorage`
+  (default off).
+- **About/Privacy page** — a standalone static page (`/about`, linked from the footer)
+  stating the portfolio intent and the privacy-by-default posture (browser-local
+  processing, no raw video stored by default, derived data treated as sensitive).
+- **Shared data/session model** — the single source of truth for the internal data shape
+  (spec §2.3, §4). Types in `src/types/session.ts` cover the five row types
+  (sample/event/calibration/stimulus/quality) and every §4 field group, with raw and
+  filtered signals as separate fields and blank (optional) distinct from a real `0`. An
+  in-memory `SessionStore` (`src/lib/sessionStore.ts`) accumulates typed rows and owns the
+  session-relative `time_ms` clock; later capture/tracking modules write to it rather than
+  inventing their own shapes. Export (prompt 031) will serialise this store. Unit-tested
+  with `node --test` (`npm run test`).
 - **eek-a-dev workflow** — `AGENTS.md`/`CLAUDE.md`, agent guides, prompt files, scripts
   (`validate-prompts.sh`, `check-public-build.sh`, `new-prompt.sh`), and GitHub Actions
   (`check-build.yml`, `deploy-pages.yml`).
@@ -85,3 +97,10 @@ gap is work still to be done.
 - `002_create_specification.md` — created the binding v1 specification (run twice:
   conservative v1.0, then expanded to the full v1.0).
 - `003_plan_project_prompt_queue.md` — generated the implementation prompt queue (`004`–`033`).
+- `004_step0_overview_content.md` — real Step 0 overview content (pipeline summary, glossary).
+- `005_step_explanatory_content.md` — real introduction/methods/outputs/limitations for Steps 1–7.
+- `006_shell_polish_accessibility.md` — master-control `localStorage` persistence, responsive
+  layout, focus styles, and a skip-to-content link.
+- `007_about_privacy_page.md` — standalone about/privacy page linked from the footer.
+- `007b_shared_data_session_model.md` — shared pipeline types (`src/types/session.ts`) and the
+  in-memory `SessionStore` (`src/lib/sessionStore.ts`), with `node --test` unit tests.
