@@ -452,6 +452,28 @@ body {
   box-shadow: 0 0 0 6px rgba(91, 227, 155, 0.3);
 }
 
+/* Step 5 calibrated screen-gaze box */
+.gaze-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  max-height: 60vh;
+  border: 1px solid var(--colour-border);
+  border-radius: 0.5rem;
+  background: var(--colour-surface);
+  overflow: hidden;
+}
+
+.gaze-box__dot {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #4c9aff;
+  box-shadow: 0 0 0 5px rgba(76, 154, 255, 0.25);
+}
+
 /* Step 3 head-motion quality label */
 .motion-label {
   display: flex;
