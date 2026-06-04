@@ -146,3 +146,7 @@ gap is work still to be done.
   blink/`tracking_lost` gaps and re-labelling saccades by head-motion context
   (`saccade_head_still` / `saccade_during_head_movement` / `uncertain_head_motion`) with an
   `event_confidence`. Documented, overridable thresholds; unit-tested over synthetic traces.
+- `027_step6_demo.md` — Step 6 filtering/events demo (`src/demos/step6.tsx`): live raw vs
+  One Euro–filtered eye-local trace (canvas) with blink/tracking-loss shading, candidate-
+  event stream with cautious labels, and master-controlled subprocess panels (filter
+  parameters, blink/quality thresholds, event logic, recent event confidences).

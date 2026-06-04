@@ -642,6 +642,74 @@ body {
   margin: 0;
 }
 
+/* Signal trace (Step 6) */
+.signal-trace-wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.signal-trace {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--colour-border);
+}
+
+/* Candidate event stream (Step 6) */
+.event-stream {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.event-stream__label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--colour-muted);
+}
+
+.event-stream__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.event-tag {
+  display: flex;
+  flex-direction: column;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.event-tag--fixation {
+  border-left: 3px solid #4cd964;
+}
+
+.event-tag--saccade {
+  border-left: 3px solid #ff9500;
+}
+
+.event-tag--uncertain {
+  border-left: 3px solid #ff3b30;
+}
+
+.event-tag__type {
+  font-weight: 600;
+  color: var(--colour-text);
+}
+
+.event-tag__meta {
+  color: var(--colour-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Narrow-viewport (mobile) adjustments */
 @media (max-width: 480px) {
   .site-header__bar {
