@@ -47,6 +47,9 @@ export type ProcessingLocation = 'browser_local' | 'android_local' | 'cloud';
 /** Coarse eyelid state for a sample. */
 export type BlinkState = 'open' | 'closed';
 
+/** Screen/viewport orientation (specification §3.7). */
+export type ScreenOrientationLabel = 'portrait' | 'landscape';
+
 // --- §4.3 field groups -------------------------------------------------------
 
 /** Timing fields. `time_ms` is required on every row (ms from session start). */
@@ -174,6 +177,23 @@ export interface TaskStimulusFields {
   task_phase?: string;
 }
 
+/**
+ * Viewport / screen context (specification §3.7). Needed to interpret screen
+ * coordinates: the same CSS-pixel target means a different physical/normalised
+ * position under a different viewport size, orientation, or device-pixel ratio.
+ * Logged on `stimulus` rows and refreshed whenever the context changes.
+ */
+export interface ViewportContextFields {
+  /** Viewport (layout) width in CSS pixels. */
+  viewport_width?: number;
+  /** Viewport (layout) height in CSS pixels. */
+  viewport_height?: number;
+  /** Device-pixel ratio (CSS px → device px). */
+  device_pixel_ratio?: number;
+  /** Coarse orientation derived from the viewport aspect ratio. */
+  screen_orientation?: ScreenOrientationLabel;
+}
+
 /** Processing / data-flow metadata for reproducibility (specification §4.1). */
 export interface ProcessingMetadataFields {
   pipeline_id?: string;
@@ -230,6 +250,7 @@ export interface CalibrationRow
 export interface StimulusRow
   extends TimingFields,
     TaskStimulusFields,
+    ViewportContextFields,
     ProcessingMetadataFields {
   row_type: 'stimulus';
 }

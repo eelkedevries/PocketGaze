@@ -150,3 +150,9 @@ gap is work still to be done.
   One Euro–filtered eye-local trace (canvas) with blink/tracking-loss shading, candidate-
   event stream with cautious labels, and master-controlled subprocess panels (filter
   parameters, blink/quality thresholds, event logic, recent event confidences).
+- `028_stimulus_viewport_logging.md` — stimulus and viewport/screen logging
+  (`src/lib/stimulusLog.ts`): a reusable `StimulusLogger` that records stimulus events
+  (id, position in both CSS-pixel and normalised coordinate systems, timestamp) and the
+  viewport context (size, orientation, device-pixel ratio) as `stimulus` rows, re-logging
+  the viewport whenever it changes. Added `ViewportContextFields` to the session model.
+  Pure helpers (orientation, change detection, coordinate resolution) unit-tested.
