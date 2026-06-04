@@ -176,3 +176,9 @@ gap is work still to be done.
   download. `ExportButton` component (`src/components/ExportButton.tsx`) wired into Step 1's
   implementation details panels. Serialiser unit-tested (row types, blanks, raw/filtered,
   header stability, processing metadata).
+- `032_cross_device_performance_qa.md` — cross-device / graceful-degradation QA pass. Code-
+  level audit (recorded in `docs-dev/reviews/cross_device_qa_results.md`) confirmed every
+  camera/inference demo degrades gracefully (camera denied/unsupported, rVFC→rAF fallback,
+  GPU→CPU delegate, WASM/model load failure, WebEyeTrack provider failure, camera release on
+  unmount) — no broken-page paths, no code changes required. Physical multi-device runs and
+  iOS Safari verification remain human tasks; residual limitations documented.
