@@ -140,3 +140,9 @@ gap is work still to be done.
   `SampleSuppressor` that marks `blink_state`, per-sample validity, and sustained tracking
   loss, with documented thresholds so invalid data is excluded from event detection (`026`)
   without dropping raw columns. Unit-tested. (Prompts 016–024 were run in a parallel session.)
+- `026_event_detection.md` — candidate event detection (`src/lib/eventDetection.ts`): a
+  velocity/displacement detector that turns the filtered, quality-checked eye-local trace
+  into cautiously-labelled `fixation_candidate` and saccade-like events, breaking runs on
+  blink/`tracking_lost` gaps and re-labelling saccades by head-motion context
+  (`saccade_head_still` / `saccade_during_head_movement` / `uncertain_head_motion`) with an
+  `event_confidence`. Documented, overridable thresholds; unit-tested over synthetic traces.
