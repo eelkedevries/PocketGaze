@@ -22,13 +22,31 @@ The pipeline is presented as eight pages (Step 0–7):
 
 ## Current status
 
-This is an early **scaffold**. The site builds and is fully navigable, but every
-page currently contains **simple placeholders only**. There is no real camera access,
-frame timing, face/eye tracking, calibration, filtering, event detection, or data export
-yet — those are deliberately deferred to later prompts.
+The pipeline is fully implemented. Each step page has a working live demo; no
+placeholders remain.
 
-A single master **“Show implementation details”** control in the header reveals or hides
-the optional implementation/subprocess placeholder panels on each step page.
+| Step | What the demo does |
+|------|-------------------|
+| Step 1 | Camera capture with per-frame timing (rVFC/rAF), live FPS and latency readout |
+| Step 2 | Face-landmark and eye-feature overlay in real time (MediaPipe FaceLandmarker) |
+| Step 3 | Head-pose estimation (yaw/pitch/roll) and head-motion quality labelling |
+| Step 4 | Eye-local gaze signal extraction, One Euro filtering, per-provider comparison |
+| Step 5 | Calibration: 9-point capture, polynomial regression, residual visualisation |
+| Step 6 | Signal filtering and event detection: filtered vs raw trace, blink shading, candidate fixations and saccades |
+| Step 7 | Content-coordinate mapping: pointer-driven scrollable/zoomable panel showing screen vs content coordinates |
+
+All processing happens locally in the browser — no camera frames are uploaded or stored.
+
+A single master **”Show implementation details”** control in the header reveals or hides
+the optional implementation/subprocess panels on each step page.
+
+### Data export
+
+After running any demo that accumulates session data, the **Export session data** panel
+(Step 1 → Show implementation details) downloads a CSV file of all accumulated rows:
+sample, event, calibration, stimulus, and quality rows in a single combined file, with
+raw and filtered signals in separate columns and blank (not zero) for non-applicable
+fields. Nothing is uploaded; the download is entirely local.
 
 ## Tech stack
 

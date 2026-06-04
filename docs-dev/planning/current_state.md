@@ -58,48 +58,25 @@ gap is work still to be done.
 
 ## In progress / next
 
-- **Prompts 002 and 003 are now finalised, runnable prompts** (the `DRAFT_` markers were
-  removed): `002_create_specification.md` was expanded to generate the *full* binding
-  specification (architecture, per-step Step 0–7 designs, data-export schema, event
-  vocabulary, domain rules, naming/voice, technology decisions), and
-  `003_plan_project_prompt_queue.md` generates the *full ordered* implementation prompt
-  queue (Phases A–I, browser-local, incremental).
-- **Implementation prompt queue generated and hardened:** prompts `004`–`033` (plus
-  `007b_shared_data_session_model.md` and the `014` head-pose method spike + `014b`
-  implementation split) cover Phases A–I (content & shell; shared data/session model;
-  capture & timing; features; head/phone motion; eye-local & gaze; calibration; filtering &
-  events; content mapping; export & hardening). They are the ordered, browser-local,
-  incremental work queue and have **not been run yet**.
-- **Queue hardening (from review feedback):** every implementation prompt now has
-  `Required reading`, `Dependencies`, split `Automated checks` / `Manual verification`, and
-  (where relevant) `Data contracts touched`. `validate-prompts.sh` now enforces prompt
-  structure and rejects unresolved `<placeholders>`. Added
-  `docs-dev/reviews/runtime_qa_checklist.md`. Pure-logic prompts request `node --test`
-  unit tests via `npm run test`.
-- **Spec v1.1:** export format locked to one combined CSV (`row_type` column, blanks for
-  N/A, ms-from-start `time_ms`); shared data/session model added to the architecture;
-  head-pose method recorded as a spike decision. Deployment wording made consistent
-  (auto-deploy on push to `main`) across README/spec/current_state/workflow.
-- **Spec v1.2:** primary feature-extraction library locked (spike `011`) to **MediaPipe
-  FaceLandmarker (Tasks Vision, Web)**, with Human kept as a documented alternative.
-  Rationale, the self-hosting requirement (model + WASM assets served from our own origin,
-  no runtime CDN), and browser support are recorded in §7.3; added to §8 and removed from
-  §9 open decisions.
-- **Spec v1.3:** head-pose method locked (spike `014`) to the **MediaPipe facial
-  transformation matrix** (Procrustes-style normalisation kept as a lightweight fallback;
-  OpenCV.js `solvePnP` rejected on bundle size/complexity). Rationale, bundle/performance/
-  stability implications, and the monocular-translation caveat are recorded in §7.3; added
-  to §8 and removed from §9 open decisions.
-- **Next planned prompt:** run `004_step0_overview_content.md`, then proceed in order
-  (note `007b` runs before `008`, and `014` before `014b`).
+The full implementation queue (`004`–`033`) is **complete**. All step demos are working;
+the pipeline is implemented end-to-end in the browser. No further implementation prompts
+are planned. Outstanding items are human-run tasks:
+
+- Physical multi-device verification (Android Chrome/Firefox; iOS Safari status) against
+  `docs-dev/reviews/runtime_qa_checklist.md`.
+- Confirming the deployed GitHub Pages URL (`https://eelkedevries.github.io/PocketGaze/`)
+  loads correctly after the final push.
 
 ## Important caveats
 
-- The site currently contains **simple placeholders only**.
-- There is **no real camera, frame timing, face/eye tracking, calibration, filtering,
-  event detection, or data export**, and no Android or backend code.
-- The intended later site behaviour includes the master control for showing/hiding
-  implementation-detail panels (already scaffolded at placeholder level).
+- All processing is browser-local; no raw video is uploaded or stored.
+- Monocular head-pose translation (`tx/ty/tz`) is approximate/unscaled (documented in
+  `headPose.ts`); this is a known limitation of the monocular approach.
+- Physical multi-device verification (Android Chrome/Firefox; iOS Safari) has not been
+  performed in the agent environment; it remains a human task.
+- The WebEyeTrack provider (Step 4, provider B) fetches model weights from third-party
+  CDNs when selected; this is documented and narrowly scoped (provider A is fully
+  self-hosted and is the default).
 
 ## Prompts run
 
@@ -182,3 +159,7 @@ gap is work still to be done.
   GPU→CPU delegate, WASM/model load failure, WebEyeTrack provider failure, camera release on
   unmount) — no broken-page paths, no code changes required. Physical multi-device runs and
   iOS Safari verification remain human tasks; residual limitations documented.
+- `033_docs_and_deploy_verification.md` — updated `README.md` and `docs/` to describe the
+  working demos, camera permission flow, and CSV export; removed all scaffold/placeholder
+  wording. Updated `current_state.md` to reflect the fully-implemented pipeline. Added
+  camera-permission and WASM-load-failure troubleshooting to `docs/troubleshooting.md`.

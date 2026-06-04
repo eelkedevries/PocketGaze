@@ -20,6 +20,27 @@ PocketGaze uses `HashRouter`, so routes look like `/PocketGaze/#/step-3`. This k
 links and refreshes working on GitHub Pages without server-side rewrites. If you switch to
 a history-based router later, you will also need a Pages SPA fallback.
 
+## Camera option is unavailable or the button is missing
+
+The camera demos require a **secure context** (`https://` or `localhost`). If the page is
+served over plain HTTP from a non-localhost origin, `getUserMedia` is blocked by the
+browser; the demo shows "Camera unavailable" instead of the Start camera button. Serve the
+site over HTTPS, or run it locally with `npm run dev`.
+
+## Camera permission denied
+
+If you dismissed the browser permission prompt, the demo shows an error message and a
+**Try again** button. To re-enable the camera, use the browser's site-settings or
+address-bar camera icon to allow access, then click **Try again**.
+
+## Face tracking does not start
+
+The MediaPipe WASM and model files are self-hosted under `public/`. If those assets fail
+to load (for example, because the base path is wrong or the files are missing from
+`dist/`), the demo shows: "The face-tracking model could not be loaded — the explanatory
+content above still applies." Check the browser console for 404s and confirm the Vite
+base path matches the repository name (`/PocketGaze/`).
+
 ## Development server will not start
 
 - Confirm Node.js 22+ is installed.
