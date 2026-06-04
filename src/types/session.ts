@@ -160,8 +160,16 @@ export interface EventFields {
 
 /** Task / stimulus fields (calibration and stimulus rows). */
 export interface TaskStimulusFields {
+  /** Target position in CSS pixels (device-specific). */
   target_x?: number;
   target_y?: number;
+  /**
+   * Target position in NORMALISED screen coordinates (0–1), resolution- and
+   * orientation-independent — kept alongside the CSS-pixel target so a
+   * calibration stays interpretable across viewports (`021`).
+   */
+  target_nx?: number;
+  target_ny?: number;
   target_id?: string;
   task_phase?: string;
 }
@@ -212,6 +220,7 @@ export interface CalibrationRow
   extends TimingFields,
     TaskStimulusFields,
     EyeLocalRawFields,
+    EyeLocalSignalFields,
     ScreenGazeFields,
     ProcessingMetadataFields {
   row_type: 'calibration';

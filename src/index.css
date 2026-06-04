@@ -405,6 +405,53 @@ body {
   background: var(--colour-surface);
 }
 
+/* Follow-the-dots calibration task */
+.calibration {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.calibration__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.calibration__progress {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.calibration__stage {
+  position: relative;
+  width: 100%;
+  min-height: 320px;
+  aspect-ratio: 9 / 16;
+  max-height: 70vh;
+  border: 1px solid var(--colour-border);
+  border-radius: 0.5rem;
+  background: var(--colour-surface);
+  overflow: hidden;
+}
+
+.calibration__dot {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #4c9aff;
+  box-shadow: 0 0 0 4px rgba(76, 154, 255, 0.25);
+}
+
+.calibration__dot--settle {
+  opacity: 0.55;
+}
+
+.calibration__dot--capture {
+  background: #5be39b;
+  box-shadow: 0 0 0 6px rgba(91, 227, 155, 0.3);
+}
+
 /* Step 3 head-motion quality label */
 .motion-label {
   display: flex;
