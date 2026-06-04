@@ -135,3 +135,8 @@ gap is work still to be done.
   configurable thresholds), with a stateful `HeadMotionLabeller` and an `headMotionExcluded`
   predicate for rejecting uncertain intervals. Added `head_motion_label` to sample rows
   (shared `HeadMotionFields`). Unit-tested.
+- `025_blink_quality_suppression.md` — blink suppression and quality thresholding
+  (`src/lib/suppression.ts`): batch blink/`tracking_lost` interval detectors plus a streaming
+  `SampleSuppressor` that marks `blink_state`, per-sample validity, and sustained tracking
+  loss, with documented thresholds so invalid data is excluded from event detection (`026`)
+  without dropping raw columns. Unit-tested. (Prompts 016–024 were run in a parallel session.)
