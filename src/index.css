@@ -798,6 +798,28 @@ body {
   gap: 0.6rem;
 }
 
+/* Export button */
+.export-button-wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.export-button {
+  width: max-content;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--colour-accent);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.export-button:hover {
+  opacity: 0.85;
+}
+
 /* Narrow-viewport (mobile) adjustments */
 @media (max-width: 480px) {
   .site-header__bar {

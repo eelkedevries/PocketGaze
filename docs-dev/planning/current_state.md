@@ -169,3 +169,10 @@ gap is work still to be done.
   coordinate moves under scroll/zoom — wiring `ContentMapper` (029) and `StimulusLogger`
   (028). Master-controlled subprocess panels: viewport/DPR/orientation, element coordinates,
   scroll/zoom/transform log, logged stimulus rows.
+- `031_derived_data_export.md` — derived-data export (`src/lib/exportCsv.ts`): pure
+  `serialiseToCsv` serialises `SessionStore` rows to the locked combined CSV (§4.1):
+  single `row_type` column, blank for N/A (not 0), raw and filtered in separate columns,
+  processing metadata columns, no raw video. `downloadSessionCsv` triggers a local browser
+  download. `ExportButton` component (`src/components/ExportButton.tsx`) wired into Step 1's
+  implementation details panels. Serialiser unit-tested (row types, blanks, raw/filtered,
+  header stability, processing metadata).

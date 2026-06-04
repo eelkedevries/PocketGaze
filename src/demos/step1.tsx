@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
+import ExportButton from '../components/ExportButton';
 import { FrameTimer, type FrameTick } from '../lib/frameTiming';
 import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
@@ -217,6 +218,11 @@ function Step1DetailsPanels() {
             <strong>{formatFps(tick.nominalFps)}</strong>
           </li>
         </ul>
+      </section>
+
+      <section className="panel">
+        <h3 className="panel__title">Export session data</h3>
+        <ExportButton store={store} />
       </section>
 
       <section className="panel">
