@@ -156,3 +156,10 @@ gap is work still to be done.
   viewport context (size, orientation, device-pixel ratio) as `stimulus` rows, re-logging
   the viewport whenever it changes. Added `ViewportContextFields` to the session model.
   Pure helpers (orientation, change detection, coordinate resolution) unit-tested.
+- `029_content_coordinate_mapping.md` — content coordinate mapping
+  (`src/lib/contentCoordinates.ts`): pure `screenToContent` converts normalised screen gaze
+  to content-relative coordinates via `getBoundingClientRect` (accounts for page scroll, CSS
+  transforms, and layout shifts); `applyElementScroll` adds internal-scroll correction;
+  `contentMappedFields` writes `content_x/y/content_mapping_available` (blank not zero when
+  unavailable). `ContentMapper` class listens for scroll/resize to fire `onTransformChange`.
+  Pure helpers unit-tested (scroll, zoom, offset, edge cases).
