@@ -5,6 +5,7 @@ import { step3Demo } from './step3';
 import { step4Demo } from './step4';
 import { step5Demo } from './step5';
 import { step6Demo } from './step6';
+import { step7Demo } from './step7';
 
 // Per-step live demos (specification §2.3, §2.6). A step that provides a demo
 // supplies three pieces sharing state via a provider that StepPage mounts around
@@ -27,4 +28,5 @@ export const stepDemos: Record<string, StepDemo> = {
   'step-4': step4Demo,
   'step-5': step5Demo,
   'step-6': step6Demo,
+  'step-7': step7Demo,
 };

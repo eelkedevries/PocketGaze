@@ -163,3 +163,9 @@ gap is work still to be done.
   `contentMappedFields` writes `content_x/y/content_mapping_available` (blank not zero when
   unavailable). `ContentMapper` class listens for scroll/resize to fire `onTransformChange`.
   Pure helpers unit-tested (scroll, zoom, offset, edge cases).
+- `030_step7_demo.md` — Step 7 content-mapping demo (`src/demos/step7.tsx`): a pointer-driven
+  (gaze stand-in) scrollable, zoomable content panel contrasting screen vs content
+  coordinates — a fixed content target keeps a constant content coordinate while its screen
+  coordinate moves under scroll/zoom — wiring `ContentMapper` (029) and `StimulusLogger`
+  (028). Master-controlled subprocess panels: viewport/DPR/orientation, element coordinates,
+  scroll/zoom/transform log, logged stimulus rows.
