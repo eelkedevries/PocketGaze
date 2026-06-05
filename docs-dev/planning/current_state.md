@@ -224,3 +224,8 @@ Outstanding items are human-run tasks:
   to `DetectedEvent` and `meanDegreesPerNormalised` to `visualAngle.ts` (both unit-tested);
   a "Why degrees of visual angle" explainer panel sits in the Step 5 details. All degree
   figures are labelled estimates (assumed IPD/FOV/screen size; §6.3); no schema changes.
+- `041_smooth_pursuit_lib.md` — pure smooth-pursuit module (`src/lib/smoothPursuit.ts`):
+  `pursuitTarget` (horizontal/circular moving target), `pursuitGain` (gaze/target velocity ratio
+  + mean tracking error, degenerate-guarded), and a cautious `pursuitCandidate` helper. Added
+  the additive `smooth_pursuit_candidate` value to the §5 event vocabulary (`EventType`).
+  Unit-tested (unit gain, lag/undershoot, tracking error, degenerate). No demo (that is `042`).

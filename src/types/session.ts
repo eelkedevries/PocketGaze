@@ -29,6 +29,7 @@ export type EventType =
   | 'saccade_head_still'
   | 'saccade_during_head_movement'
   | 'uncertain_head_motion'
+  | 'smooth_pursuit_candidate'
   | 'calibration_target'
   | 'stimulus_event';
 
