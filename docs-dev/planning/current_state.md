@@ -286,3 +286,8 @@ Outstanding items are human-run tasks:
   overlaid (previews the Step 4 −1…1 mapping), plus a rolling combined-EAR trace with the blink
   threshold line that dips on a blink. Reuses the feature extractor/geometry; visualisation only,
   handles no-face gracefully, session model unchanged.
+- `053_velocity_trace_threshold.md` — Step 6 velocity trace: a rolling eye-local velocity of the
+  filtered signal (reusing `sampleSpeedPerSec`) drawn under the master control with the
+  `saccadeSpeedPerSec` threshold as a dashed line and threshold crossings shaded, making the
+  saccade-detection criterion observable. Invalid samples break the trace. Visualisation only,
+  session model unchanged.

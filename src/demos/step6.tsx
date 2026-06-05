@@ -16,6 +16,7 @@ import { SignalFilterSet, DEFAULT_ONE_EURO_PARAMS } from '../lib/oneEuroFilter';
 import { SampleSuppressor, DEFAULT_SUPPRESSION_THRESHOLDS } from '../lib/suppression';
 import {
   detectEvents,
+  sampleSpeedPerSec,
   DEFAULT_EVENT_DETECTION_THRESHOLDS,
   type DetectedEvent,
   type EventSampleInput,
@@ -57,6 +58,8 @@ interface Step6DemoContextValue {
   degPerNorm: number | null;
   /** Accumulated fixation centroids (eye-local mapped to 0–1), for scanpath/heatmap (044). */
   fixations: Fixation[];
+  /** Rolling eye-local velocity (units/s) of the filtered signal, for the threshold trace (053). */
+  velocitySamples: Array<{ speed: number; valid: boolean }>;
   onStreamChange: (stream: MediaStream | null) => void;
   onVideoElement: (video: HTMLVideoElement | null) => void;
 }
@@ -112,6 +115,9 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
   // Accumulated fixation centroids and the start times already collected.
   const fixationsRef = useRef<Fixation[]>([]);
   const seenFixationStartsRef = useRef<Set<number>>(new Set());
+  // Rolling eye-local velocity of the filtered signal + the previous filtered point.
+  const velocityRef = useRef<Array<{ speed: number; valid: boolean }>>([]);
+  const prevFilteredRef = useRef<{ timeMs: number; x: number; y: number } | null>(null);
 
   const [state, setState] = useState<DemoState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -119,6 +125,9 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
   const [recentEvents, setRecentEvents] = useState<DetectedEvent[]>([]);
   const [degPerNorm, setDegPerNorm] = useState<number | null>(null);
   const [fixations, setFixations] = useState<Fixation[]>([]);
+  const [velocitySamples, setVelocitySamples] = useState<Array<{ speed: number; valid: boolean }>>(
+    [],
+  );
 
   const stopLoop = useCallback(() => {
     runningRef.current = false;
@@ -177,6 +186,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
 
       rawX = signal.combined.x;
       filtX = filtered.combined_eye_x_filtered ?? signal.combined.x;
+      const filtY = filtered.combined_eye_y_filtered ?? signal.combined.y;
       valid = sup.valid;
       blink = sup.blink_state === 'closed';
 
@@ -184,7 +194,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
         eventInputsRef.current.push({
           timeMs: ts,
           x: filtX,
-          y: filtered.combined_eye_y_filtered ?? signal.combined.y,
+          y: filtY,
           valid: true,
           headMotionLabel: features.headPose?.quality != null && features.headPose.quality >= 0.4
             ? 'low'
@@ -194,8 +204,28 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
         if (eventInputsRef.current.length > TRACE_CAPACITY) {
           eventInputsRef.current = eventInputsRef.current.slice(-TRACE_CAPACITY);
         }
+        // Rolling velocity of the filtered signal, reusing the detection speed
+        // (sampleSpeedPerSec only reads timeMs/x/y, so the cast is safe).
+        const cur = { timeMs: ts, x: filtX, y: filtY };
+        const prev = prevFilteredRef.current;
+        const speed = prev
+          ? sampleSpeedPerSec(prev as EventSampleInput, cur as EventSampleInput) ?? 0
+          : 0;
+        velocityRef.current.push({ speed, valid: true });
+        prevFilteredRef.current = cur;
+      } else {
+        velocityRef.current.push({ speed: 0, valid: false });
+        prevFilteredRef.current = null; // invalid samples break the velocity run
+      }
+      if (velocityRef.current.length > TRACE_CAPACITY) {
+        velocityRef.current = velocityRef.current.slice(-TRACE_CAPACITY);
       }
     } else {
+      velocityRef.current.push({ speed: 0, valid: false });
+      prevFilteredRef.current = null;
+      if (velocityRef.current.length > TRACE_CAPACITY) {
+        velocityRef.current = velocityRef.current.slice(-TRACE_CAPACITY);
+      }
       suppressor.process({
         timeMs: ts,
         leftEyeOpen: true,
@@ -214,6 +244,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
     if (ts - lastUiRef.current >= 100) {
       lastUiRef.current = ts;
       setTraceSamples([...traceRef.current]);
+      setVelocitySamples([...velocityRef.current]);
       setState(features ? 'tracking' : 'no-face');
 
       // Re-run event detection periodically.
@@ -292,6 +323,8 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       lastDetectRef.current = 0;
       traceRef.current = [];
       eventInputsRef.current = [];
+      velocityRef.current = [];
+      prevFilteredRef.current = null;
       fixationsRef.current = [];
       seenFixationStartsRef.current = new Set();
       filterRef.current!.reset();
@@ -300,6 +333,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       setRecentEvents([]);
       setDegPerNorm(null);
       setFixations([]);
+      setVelocitySamples([]);
       setState('loading');
       setErrorMessage(null);
 
@@ -344,6 +378,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       setFilterParams,
       degPerNorm,
       fixations,
+      velocitySamples,
       onStreamChange,
       onVideoElement,
     }),
@@ -357,6 +392,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       setFilterParams,
       degPerNorm,
       fixations,
+      velocitySamples,
       onStreamChange,
       onVideoElement,
     ],
@@ -467,6 +503,89 @@ function SignalTrace({ samples }: { samples: TraceSample[] }) {
       height={TRACE_HEIGHT}
       className="signal-trace"
       aria-label="Raw and filtered combined eye-local signal (horizontal)"
+    />
+  );
+}
+
+// --- Velocity trace with the detection threshold (053) ----------------------
+
+function VelocityTrace({
+  samples,
+  threshold,
+}: {
+  samples: Array<{ speed: number; valid: boolean }>;
+  threshold: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#1b2330';
+    ctx.fillRect(0, 0, W, H);
+
+    // Scale so the threshold sits at ~45% height, with headroom for spikes.
+    const vMax = Math.max(threshold * 2.2, ...samples.map((s) => s.speed), 1);
+    const toY = (v: number) => H - (Math.min(vMax, Math.max(0, v)) / vMax) * H;
+
+    // Shade where the velocity crosses the threshold (saccade candidates arise).
+    for (let i = 0; i < samples.length; i++) {
+      if (samples[i].valid && samples[i].speed >= threshold) {
+        const x = (i / Math.max(1, samples.length - 1)) * W;
+        const nextX = i + 1 < samples.length ? ((i + 1) / (samples.length - 1)) * W : W;
+        ctx.fillStyle = 'rgba(255,123,84,0.18)';
+        ctx.fillRect(x, 0, nextX - x + 1, H);
+      }
+    }
+
+    // Threshold line.
+    const ty = toY(threshold);
+    ctx.strokeStyle = 'rgba(255,123,84,0.9)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath();
+    ctx.moveTo(0, ty);
+    ctx.lineTo(W, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,123,84,0.95)';
+    ctx.font = '10px monospace';
+    ctx.fillText(`saccade ≥ ${threshold} units/s`, 6, ty - 4);
+
+    // Velocity trace (break on invalid samples).
+    ctx.strokeStyle = '#4c9aff';
+    ctx.lineWidth = 1.6;
+    let started = false;
+    ctx.beginPath();
+    samples.forEach((s, i) => {
+      const x = (i / Math.max(1, samples.length - 1)) * W;
+      const y = toY(s.speed);
+      if (!s.valid) {
+        started = false;
+        return;
+      }
+      if (!started) {
+        ctx.moveTo(x, y);
+        started = true;
+      } else {
+        ctx.lineTo(x, y);
+      }
+    });
+    ctx.stroke();
+  }, [samples, threshold]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={600}
+      height={120}
+      className="signal-trace"
+      aria-label="Eye-local velocity trace with the saccade-detection threshold line"
     />
   );
 }
@@ -616,7 +735,7 @@ function Step6LiveDemo() {
 // --- Subprocess panels -------------------------------------------------------
 
 function Step6DetailsPanels() {
-  const { state, recentEvents, filterParams } = useStep6Demo();
+  const { state, recentEvents, filterParams, velocitySamples } = useStep6Demo();
   const running = state === 'tracking' || state === 'no-face';
   const p = { ...DEFAULT_ONE_EURO_PARAMS, ...filterParams };
   const s = DEFAULT_SUPPRESSION_THRESHOLDS;
@@ -632,6 +751,22 @@ function Step6DetailsPanels() {
 
   return (
     <div className="panels">
+      <section className="panel">
+        <h3 className="panel__title">Velocity vs the saccade threshold</h3>
+        <VelocityTrace
+          samples={velocitySamples}
+          threshold={DEFAULT_EVENT_DETECTION_THRESHOLDS.saccadeSpeedPerSec}
+        />
+        <p className="panel__note">
+          The eye-local speed of the filtered signal (units/s), with the{' '}
+          <code>saccadeSpeedPerSec</code> ={' '}
+          {DEFAULT_EVENT_DETECTION_THRESHOLDS.saccadeSpeedPerSec} threshold as the dashed line. Where
+          the trace crosses above it (shaded), inter-sample segments are classified saccade-like —
+          the detection criterion made visible. Invalid (blink/tracking-lost) samples break the
+          trace.
+        </p>
+      </section>
+
       <section className="panel">
         <h3 className="panel__title">One Euro filter parameters</h3>
         <ul className="panel__list">
