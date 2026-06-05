@@ -271,3 +271,8 @@ Outstanding items are human-run tasks:
   on the About page: this browser pipeline vs research-grade VOG vs a commercial webcam tool across
   accuracy, precision, sampling rate, calibration burden, and head-motion robustness, using ranges
   with units and a "not directly comparable / not measured here" caveat (§6.3). Static; no benchmarking.
+- `050_head_pose_compensation_toggle.md` — head-pose compensation on/off toggle in Step 4: a
+  pure illustrative `compensateEyeLocal` (`src/lib/headCompensation.ts`, unit-tested) removes a
+  linear yaw/pitch term from the displayed eye-local point. With it off the trace drifts under
+  head motion; with it on the drift is reduced. A demo control (not a second master toggle),
+  display-only (session model unchanged), clearly labelled as illustrative, not geometric (§6.3).

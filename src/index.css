@@ -718,6 +718,13 @@ body {
   font-weight: 600;
 }
 
+.compensation-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);

@@ -11,6 +11,7 @@ import {
 import CameraPreview from '../components/CameraPreview';
 import LivePrecision from '../components/LivePrecision';
 import { RollingPrecision, type RollingPrecisionValue } from '../lib/livePrecision';
+import { compensateEyeLocal } from '../lib/headCompensation';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
 import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
 import { computeEyeLocalSignal, type EyeLocalSignal } from '../lib/eyeLocalSignal';
@@ -47,6 +48,8 @@ interface Step4DemoContextValue {
   sample: DemoSample | null;
   precision: RollingPrecisionValue | null;
   precisionWindow: number;
+  compensate: boolean;
+  setCompensate: (on: boolean) => void;
   state: DemoState;
   errorMessage: string | null;
   providerId: ProviderId;
@@ -172,9 +175,11 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
   const traceRef = useRef<{ x: number; y: number }[]>([]);
   const providerIdRef = useRef<ProviderId>('regression');
   const precisionRef = useRef<RollingPrecision>(new RollingPrecision());
+  const compensateRef = useRef(true);
 
   const [sample, setSample] = useState<DemoSample | null>(null);
   const [precision, setPrecision] = useState<RollingPrecisionValue | null>(null);
+  const [compensate, setCompensateState] = useState(true);
   const [state, setState] = useState<DemoState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [providerId, setProviderId] = useState<ProviderId>('regression');
@@ -232,11 +237,18 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
           quality: features.rightEye.quality,
         },
       );
+      // Illustrative head-pose compensation (050): with it on, a head-pose term
+      // is removed so motion-induced drift is reduced; with it off, the raw
+      // eye-local point is shown and drifts when the head moves (§6.4). The
+      // session-model signal columns are unchanged — this is a display transform.
+      const shown = compensateRef.current
+        ? compensateEyeLocal(eyeLocal.combined, features.headPose)
+        : eyeLocal.combined;
       const trace = traceRef.current;
-      trace.push({ x: eyeLocal.combined.x, y: eyeLocal.combined.y });
+      trace.push({ x: shown.x, y: shown.y });
       if (trace.length > TRACE_MAX) trace.shift();
-      // Feed the rolling live-precision window with the combined eye-local point.
-      precisionRef.current.push({ x: eyeLocal.combined.x, y: eyeLocal.combined.y });
+      // Feed the rolling live-precision window with the shown eye-local point.
+      precisionRef.current.push({ x: shown.x, y: shown.y });
     }
 
     // Feed the selected provider. Provider B (image-based) needs the frame.
@@ -340,6 +352,12 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
     canvasRef.current = canvas;
   }, []);
 
+  const setCompensate = useCallback((on: boolean) => {
+    compensateRef.current = on;
+    setCompensateState(on);
+    precisionRef.current.reset();
+  }, []);
+
   useEffect(
     () => () => {
       stopLoop();
@@ -355,6 +373,8 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
       sample,
       precision,
       precisionWindow: precisionRef.current.windowLength,
+      compensate,
+      setCompensate,
       state,
       errorMessage,
       providerId,
@@ -368,6 +388,8 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
       store,
       sample,
       precision,
+      compensate,
+      setCompensate,
       state,
       errorMessage,
       providerId,
@@ -411,6 +433,8 @@ function Step4LiveDemo() {
     sample,
     precision,
     precisionWindow,
+    compensate,
+    setCompensate,
     state,
     errorMessage,
     providerId,
@@ -482,11 +506,24 @@ function Step4LiveDemo() {
       </dl>
 
       {(state === 'tracking' || state === 'no-face') && (
-        <LivePrecision
-          value={precision}
-          windowLength={precisionWindow}
-          signalLabel="eye-local"
-        />
+        <>
+          <label className="compensation-toggle">
+            <input
+              type="checkbox"
+              checked={compensate}
+              onChange={(e) => setCompensate(e.target.checked)}
+            />
+            <span>Head-pose compensation: {compensate ? 'on' : 'off'}</span>
+          </label>
+          <p className="timing-demo__note">
+            With compensation <strong>off</strong>, turn or nod your head and watch the eye-local
+            trace <strong>drift</strong> even though your eyes stay still — head/phone motion
+            masquerading as eye movement (§6.4). With it <strong>on</strong>, a simple illustrative
+            head-pose term reduces the drift. This is a teaching control, not a rigorous geometric
+            correction, and it does not change the recorded data.
+          </p>
+          <LivePrecision value={precision} windowLength={precisionWindow} signalLabel="eye-local" />
+        </>
       )}
 
       <p className="timing-demo__note" role="status">
