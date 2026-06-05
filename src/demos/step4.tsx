@@ -9,6 +9,8 @@ import {
   type ReactNode,
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
+import LivePrecision from '../components/LivePrecision';
+import { RollingPrecision, type RollingPrecisionValue } from '../lib/livePrecision';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
 import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
 import { computeEyeLocalSignal, type EyeLocalSignal } from '../lib/eyeLocalSignal';
@@ -43,6 +45,8 @@ interface DemoSample {
 interface Step4DemoContextValue {
   store: SessionStore;
   sample: DemoSample | null;
+  precision: RollingPrecisionValue | null;
+  precisionWindow: number;
   state: DemoState;
   errorMessage: string | null;
   providerId: ProviderId;
@@ -167,8 +171,10 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
   const frameCountRef = useRef(0);
   const traceRef = useRef<{ x: number; y: number }[]>([]);
   const providerIdRef = useRef<ProviderId>('regression');
+  const precisionRef = useRef<RollingPrecision>(new RollingPrecision());
 
   const [sample, setSample] = useState<DemoSample | null>(null);
+  const [precision, setPrecision] = useState<RollingPrecisionValue | null>(null);
   const [state, setState] = useState<DemoState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [providerId, setProviderId] = useState<ProviderId>('regression');
@@ -229,6 +235,8 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
       const trace = traceRef.current;
       trace.push({ x: eyeLocal.combined.x, y: eyeLocal.combined.y });
       if (trace.length > TRACE_MAX) trace.shift();
+      // Feed the rolling live-precision window with the combined eye-local point.
+      precisionRef.current.push({ x: eyeLocal.combined.x, y: eyeLocal.combined.y });
     }
 
     // Feed the selected provider. Provider B (image-based) needs the frame.
@@ -249,6 +257,7 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
     if (ts - lastUiUpdateRef.current >= 100) {
       lastUiUpdateRef.current = ts;
       setSample({ eyeLocal, gaze });
+      setPrecision(precisionRef.current.value());
       setState(features ? 'tracking' : 'no-face');
     }
   }, [extractor, store, providers, grabFrame]);
@@ -283,7 +292,9 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
       frameCountRef.current = 0;
       lastUiUpdateRef.current = 0;
       traceRef.current = [];
+      precisionRef.current.reset();
       setSample(null);
+      setPrecision(null);
       setState('loading');
       setErrorMessage(null);
 
@@ -342,6 +353,8 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
     () => ({
       store,
       sample,
+      precision,
+      precisionWindow: precisionRef.current.windowLength,
       state,
       errorMessage,
       providerId,
@@ -354,6 +367,7 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
     [
       store,
       sample,
+      precision,
       state,
       errorMessage,
       providerId,
@@ -395,6 +409,8 @@ function gazeStatusText(
 function Step4LiveDemo() {
   const {
     sample,
+    precision,
+    precisionWindow,
     state,
     errorMessage,
     providerId,
@@ -464,6 +480,14 @@ function Step4LiveDemo() {
           </dd>
         </div>
       </dl>
+
+      {(state === 'tracking' || state === 'no-face') && (
+        <LivePrecision
+          value={precision}
+          windowLength={precisionWindow}
+          signalLabel="eye-local"
+        />
+      )}
 
       <p className="timing-demo__note" role="status">
         {state === 'idle' &&

@@ -200,3 +200,8 @@ Outstanding items are human-run tasks:
   unit-tested helpers `src/lib/validationErrorMap.ts` (`validationInputsFromRows`,
   `precisionEllipse` — covariance-eigen ellipse whose area equals BCEA). Per-target table
   shows only under the master control.
+- `037_live_precision_readout.md` — live rolling-precision readout: a pure ring-buffer
+  (`src/lib/livePrecision.ts`, `RollingPrecision`) reusing `034`'s `precisionRmsS2S`/`bcea`
+  over a documented 30-sample window, and a compact `LivePrecision` component
+  (`src/components/LivePrecision.tsx`) mounted in the Step 4 eye-local demo. Normalised units,
+  "lower is steadier", not a validated device figure; no session-model changes. Unit-tested.

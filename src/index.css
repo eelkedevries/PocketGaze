@@ -545,6 +545,11 @@ body {
   color: var(--colour-muted);
 }
 
+.live-precision__hint {
+  font-size: 0.8rem;
+  color: var(--colour-muted);
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);
