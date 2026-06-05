@@ -786,6 +786,49 @@ body {
   border-radius: var(--radius);
 }
 
+.filmstrip__strip {
+  display: flex;
+  gap: 0.3rem;
+  overflow-x: auto;
+  padding-bottom: 0.3rem;
+}
+
+.filmstrip__cell {
+  flex: 0 0 auto;
+  min-width: 4.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.5rem;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: 0.3rem;
+  font-size: 0.75rem;
+}
+
+.filmstrip__cell--repeated {
+  border-color: #4c9aff;
+  background: rgba(76, 154, 255, 0.12);
+}
+
+.filmstrip__cell--dropped {
+  border-color: #ffd166;
+  background: rgba(255, 209, 102, 0.14);
+}
+
+.filmstrip__id {
+  font-weight: 600;
+}
+
+.filmstrip__time {
+  color: var(--colour-muted);
+}
+
+.filmstrip__flag {
+  font-size: 0.68rem;
+  color: var(--colour-muted);
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);

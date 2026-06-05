@@ -296,3 +296,8 @@ Outstanding items are human-run tasks:
   drawn over a screen schematic with an honest caption (linear mapping → affine mesh; edge stretch
   foreshadows edge/corner error, §6.3). Clear placeholder before any mapping exists. Reuses `022`;
   visualisation only.
+- `055_frame_filmstrip.md` — Step 1 frame-as-sample filmstrip: recent sample rows rendered as
+  cells with `frame_id`/`time_ms` (timestamps/metadata only — no raw video, §2.7), flagging
+  repeated frames (same media time) and gaps implying dropped source frames, with the cumulative
+  dropped/repeated counts from the tick; on the rAF fallback path it notes these can't be observed.
+  Reuses the existing timing fields; visualisation only.

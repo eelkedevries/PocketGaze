@@ -121,8 +121,70 @@ function formatFps(value: number | undefined): string {
   return value === undefined || value <= 0 ? '—' : `${value.toFixed(1)} fps`;
 }
 
+const FILMSTRIP_MAX = 12;
+
+// Frame-as-sample filmstrip (specification §3.1, §4.1). Renders recent sample
+// rows (timestamps/ids only — never raw video, §2.7) as cells, flagging repeated
+// frames (same source media time) and frames with a gap that implies dropped
+// source frames. On the rAF fallback path there is no media time, so these
+// cannot be observed — noted rather than guessed. Reuses the timing fields and
+// the cumulative dropped/repeated counts from `009`/frameStats; no new maths.
+function FrameFilmstrip({
+  store,
+  tick,
+}: {
+  store: SessionStore;
+  tick: FrameTick;
+}) {
+  const rows = store.byType('sample').slice(-FILMSTRIP_MAX);
+  const expected = 1 / (tick.nominalFps && tick.nominalFps > 0 ? tick.nominalFps : 30);
+  const cells = rows.map((r, i) => {
+    const prev = i > 0 ? rows[i - 1] : undefined;
+    const vft = r.video_frame_time;
+    const pvft = prev?.video_frame_time;
+    const repeated = vft != null && pvft != null && vft === pvft;
+    const droppedBefore =
+      vft != null && pvft != null && vft - pvft > 1.8 * expected;
+    return { row: r, repeated, droppedBefore };
+  });
+
+  return (
+    <div className="filmstrip" aria-label="Recent frames as samples">
+      <div className="filmstrip__strip">
+        {cells.map(({ row, repeated, droppedBefore }, i) => (
+          <div
+            key={row.frame_id ?? i}
+            className={`filmstrip__cell${repeated ? ' filmstrip__cell--repeated' : ''}${
+              droppedBefore ? ' filmstrip__cell--dropped' : ''
+            }`}
+            title={
+              row.video_frame_time != null
+                ? `media ${row.video_frame_time.toFixed(3)} s`
+                : 'no media time (fallback)'
+            }
+          >
+            <span className="filmstrip__id">#{row.frame_id ?? '—'}</span>
+            <span className="filmstrip__time">{Math.round(row.time_ms)} ms</span>
+            {droppedBefore && <span className="filmstrip__flag">drop ⟶</span>}
+            {repeated && <span className="filmstrip__flag">repeat</span>}
+          </div>
+        ))}
+      </div>
+      <p className="timing-demo__note">
+        Each cell is one <strong>frame treated as a sample</strong> — its <code>frame_id</code> and
+        session <code>time_ms</code> (no raw video is shown or stored). Cumulative this session:{' '}
+        <strong>{tick.droppedFrames}</strong> dropped, <strong>{tick.repeatedFrames}</strong>{' '}
+        repeated.{' '}
+        {tick.usedFallback
+          ? 'On the requestAnimationFrame fallback path there is no source media time, so dropped/repeated frames cannot be observed per-frame here.'
+          : 'Amber = a gap implying dropped source frames; blue = a repeated source frame (same media time).'}
+      </p>
+    </div>
+  );
+}
+
 function Step1LiveDemo() {
-  const { tick, running, onStreamChange, onVideoElement } = useStep1Demo();
+  const { store, tick, running, onStreamChange, onVideoElement } = useStep1Demo();
 
   return (
     <div className="timing-demo">
@@ -154,6 +216,8 @@ function Step1LiveDemo() {
             : 'Timing via requestVideoFrameCallback.'
           : 'Start the camera to see the effective frame rate and per-frame timing. Processing stays on your device.'}
       </p>
+
+      {running && tick && <FrameFilmstrip store={store} tick={tick} />}
 
       <SamplingRatePanel />
     </div>
