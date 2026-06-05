@@ -267,3 +267,7 @@ Outstanding items are human-run tasks:
   saccade SVG figure (Nyquist point), a Step 3 "no corneal reflection → head-motion drift"
   panel, and an About-page "out of reach" section (microsaccades, pupillometry; no fake
   detector). Static content only, cautious British English (§6.3). No tracking code.
+- `049_method_comparison_table.md` — method-comparison table (`src/components/MethodComparisonTable.tsx`)
+  on the About page: this browser pipeline vs research-grade VOG vs a commercial webcam tool across
+  accuracy, precision, sampling rate, calibration burden, and head-motion robustness, using ranges
+  with units and a "not directly comparable / not measured here" caveat (§6.3). Static; no benchmarking.

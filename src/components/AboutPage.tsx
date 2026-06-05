@@ -1,4 +1,5 @@
 import { OutOfReachPanel } from './LimitationPanels';
+import MethodComparisonTable from './MethodComparisonTable';
 
 export default function AboutPage() {
   return (
@@ -58,6 +59,8 @@ export default function AboutPage() {
           </li>
         </ul>
       </section>
+
+      <MethodComparisonTable />
 
       <OutOfReachPanel />
 

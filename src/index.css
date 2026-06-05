@@ -713,6 +713,11 @@ body {
   align-self: flex-start;
 }
 
+.comparison-table th[scope='row'] {
+  text-align: left;
+  font-weight: 600;
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);
