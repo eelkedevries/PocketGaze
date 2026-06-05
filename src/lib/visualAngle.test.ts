@@ -5,6 +5,8 @@ import {
   degreesPerPixel,
   degreesPerNormalised,
   estimateAngularScale,
+  iodPixels,
+  translationToApproxMm,
   FALLBACK_DISTANCE_MM,
   DEFAULT_ASSUMED_IPD_MM,
 } from './visualAngle.ts';
@@ -68,5 +70,32 @@ describe('estimateAngularScale', () => {
     assert.equal(s.viewing_distance_mm, FALLBACK_DISTANCE_MM);
     assert.equal(s.assumptions.distance_is_fallback, true);
     assert.equal(s.is_estimate, true);
+  });
+});
+
+describe('iodPixels', () => {
+  it('de-normalises the horizontal separation by image width', () => {
+    const iod = iodPixels({ x: 0.6, y: 0.5 }, { x: 0.4, y: 0.5 }, 1000, 1000);
+    assert.ok(Math.abs(iod - 200) < 1e-9);
+  });
+
+  it('combines x and y components by image dimensions', () => {
+    const iod = iodPixels({ x: 0.5, y: 0.6 }, { x: 0.5, y: 0.5 }, 800, 600);
+    assert.ok(Math.abs(iod - 60) < 1e-9); // 0.1 * 600
+  });
+});
+
+describe('translationToApproxMm', () => {
+  it('anchors |tz| to the viewing distance and scales laterals by the same factor', () => {
+    const mm = translationToApproxMm({ tx: 0.5, ty: -0.5, tz: -2 }, 600);
+    assert.ok(mm);
+    assert.ok(Math.abs(mm!.tz_mm + 600) < 1e-9); // sign preserved, magnitude = distance
+    assert.ok(Math.abs(mm!.tx_mm - 150) < 1e-9); // 0.5 * (600/2)
+    assert.ok(Math.abs(mm!.ty_mm + 150) < 1e-9);
+  });
+
+  it('returns null for a degenerate depth or non-positive distance', () => {
+    assert.equal(translationToApproxMm({ tx: 1, ty: 1, tz: 0 }, 600), null);
+    assert.equal(translationToApproxMm({ tx: 1, ty: 1, tz: 2 }, 0), null);
   });
 });

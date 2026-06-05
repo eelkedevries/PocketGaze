@@ -28,6 +28,14 @@ import {
   type LandmarkLike,
 } from './eyeGeometry';
 import { decomposeHeadPose, type HeadPose, type TransformMatrix } from './headPose';
+import {
+  DEFAULT_SCREEN_DIM_MM,
+  DEFAULT_SCREEN_HEIGHT_MM,
+  degreesPerNormalised,
+  estimateAngularScale,
+  iodPixels,
+  translationToApproxMm,
+} from './visualAngle';
 
 const BASE = import.meta.env.BASE_URL;
 const WASM_PATH = `${BASE}mediapipe-vision/wasm`;
@@ -178,6 +186,23 @@ export class FaceFeatureExtractor {
     const blinkState: BlinkState =
       features.leftEye.isOpen && features.rightEye.isOpen ? 'open' : 'closed';
 
+    // Visual-angle estimate (§3.3, §6.3): image IOD + assumptions -> approximate
+    // viewing distance and angular scale. Heavily caveated as an estimate. Used
+    // to express head-pose translation in roughly metric mm without touching the
+    // raw translation values.
+    const imageWidth = video.videoWidth;
+    const imageHeight = video.videoHeight;
+    const iod = iodPixels(
+      features.leftEye.irisProxy,
+      features.rightEye.irisProxy,
+      imageWidth,
+      imageHeight,
+    );
+    const scale = estimateAngularScale({ iod_px: iod, image_width_px: imageWidth });
+    const translationMm = headPose
+      ? translationToApproxMm(headPose, scale.viewing_distance_mm)
+      : null;
+
     store.addSample({
       frame_id: frameId,
       left_eye_x_raw: features.leftEye.irisProxy.x,
@@ -196,6 +221,13 @@ export class FaceFeatureExtractor {
       head_tx: headPose?.tx,
       head_ty: headPose?.ty,
       head_tz: headPose?.tz,
+      head_tx_mm: translationMm?.tx_mm,
+      head_ty_mm: translationMm?.ty_mm,
+      head_tz_mm: translationMm?.tz_mm,
+      viewing_distance_mm: scale.viewing_distance_mm,
+      deg_per_norm_x: degreesPerNormalised(scale.viewing_distance_mm, DEFAULT_SCREEN_DIM_MM),
+      deg_per_norm_y: degreesPerNormalised(scale.viewing_distance_mm, DEFAULT_SCREEN_HEIGHT_MM),
+      angular_scale_is_estimate: true,
       head_pose_quality: headPose?.quality,
       model_name: MODEL_NAME,
       processing_location: 'browser_local',

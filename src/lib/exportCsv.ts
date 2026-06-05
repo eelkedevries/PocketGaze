@@ -67,6 +67,15 @@ export const CSV_HEADERS = [
   'head_tx',
   'head_ty',
   'head_tz',
+  // Head-pose translation in approximate mm (estimate; raw kept above)
+  'head_tx_mm',
+  'head_ty_mm',
+  'head_tz_mm',
+  // Visual-angle estimate (estimate; §3.3, §6.3)
+  'viewing_distance_mm',
+  'deg_per_norm_x',
+  'deg_per_norm_y',
+  'angular_scale_is_estimate',
   // Tracking quality
   'left_eye_quality',
   'right_eye_quality',

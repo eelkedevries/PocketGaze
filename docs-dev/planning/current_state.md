@@ -211,3 +211,10 @@ Outstanding items are human-run tasks:
   assumptions (IPD ~63 mm, default HFOV, CSS px pitch, screen dim). Degenerate inputs fall back
   to a documented finite distance. Everything is an estimate (§6.3). Unit-tested (hand-computed
   distance, monotonicity, degenerate guards). No session-model wiring (that is `039`).
+- `039_dva_session_integration.md` — wired the visual-angle estimate into the feature
+  pipeline (`src/lib/featureExtraction.ts`): each tracked sample now carries additive
+  `viewing_distance_mm`, `deg_per_norm_x/y`, `angular_scale_is_estimate`, and a roughly-metric
+  head-translation `head_tx_mm/ty_mm/tz_mm` (raw `head_tx/ty/tz` untouched; blank when no
+  face). Added pure helpers `iodPixels` and `translationToApproxMm` to `visualAngle.ts`
+  (anchors |tz| to the IOD-estimated distance) with unit tests. Extended `SampleRow` and the
+  CSV export headers additively. Everything is a documented estimate (§3.3, §6.3).

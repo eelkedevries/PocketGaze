@@ -128,6 +128,31 @@ export interface HeadPoseFields {
   head_tz?: number;
 }
 
+/**
+ * Head-pose translation in APPROXIMATE millimetres (specification §3.3, §6.3),
+ * derived from the raw `head_tx/ty/tz` and the IOD-based viewing-distance
+ * estimate (`038`/`039`). Monocular and assumption-bound — an estimate, not a
+ * measurement. The raw `HeadPoseFields` translation is preserved separately.
+ */
+export interface HeadTranslationMmFields {
+  head_tx_mm?: number;
+  head_ty_mm?: number;
+  head_tz_mm?: number;
+}
+
+/**
+ * Visual-angle estimate per sample (specification §3.3, §3.4, §6.3). Derived from
+ * the image inter-ocular separation plus assumptions (`038`/`039`): a selfie
+ * camera can only approximate degrees of visual angle, so `angular_scale_is_estimate`
+ * is set whenever these are written. Blank (not 0) when no face is detected.
+ */
+export interface VisualAngleFields {
+  viewing_distance_mm?: number;
+  deg_per_norm_x?: number;
+  deg_per_norm_y?: number;
+  angular_scale_is_estimate?: boolean;
+}
+
 /** Tracking-quality scores. */
 export interface TrackingQualityFields {
   left_eye_quality?: number;
@@ -217,6 +242,8 @@ export interface SampleRow
     ScreenGazeFields,
     ContentMappedFields,
     HeadPoseFields,
+    HeadTranslationMmFields,
+    VisualAngleFields,
     TrackingQualityFields,
     BlinkEyeStateFields,
     HeadMotionFields,

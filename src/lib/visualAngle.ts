@@ -25,6 +25,9 @@ export const DEFAULT_CSS_PX_PITCH_MM = 25.4 / 96;
 /** Documented default screen dimension spanned by one normalised unit, mm (typical phone width). */
 export const DEFAULT_SCREEN_DIM_MM = 70;
 
+/** Documented default screen height spanned by one normalised unit, mm (typical phone, portrait). */
+export const DEFAULT_SCREEN_HEIGHT_MM = 140;
+
 /** Documented fallback viewing distance, mm, used when inputs are degenerate. */
 export const FALLBACK_DISTANCE_MM = 350;
 
@@ -143,4 +146,59 @@ export function estimateAngularScale(input: AngularScaleInput): AngularScale {
     is_estimate: true,
     assumptions: { assumed_ipd_mm, hfov_deg, px_pitch_mm, screen_dim_mm, distance_is_fallback },
   };
+}
+
+/** A 2-D point with normalised image coordinates (0–1). */
+export interface NormalisedPoint {
+  x: number;
+  y: number;
+}
+
+/**
+ * Inter-ocular separation in image pixels from two normalised landmark points
+ * (e.g. the per-eye iris proxies) and the image dimensions. The x/y components
+ * are de-normalised by width/height respectively before taking the magnitude.
+ */
+export function iodPixels(
+  left: NormalisedPoint,
+  right: NormalisedPoint,
+  image_width_px: number,
+  image_height_px: number,
+): number {
+  const dx = (left.x - right.x) * image_width_px;
+  const dy = (left.y - right.y) * image_height_px;
+  return Math.hypot(dx, dy);
+}
+
+export interface Translation {
+  tx: number;
+  ty: number;
+  tz: number;
+}
+
+export interface TranslationMm {
+  tx_mm: number;
+  ty_mm: number;
+  tz_mm: number;
+}
+
+/**
+ * Express a monocular head-pose translation in APPROXIMATE millimetres
+ * (specification §3.3, §6.3). The raw translation is in arbitrary model units;
+ * this anchors the scale so the depth |tz| maps to the IOD-estimated viewing
+ * distance (`mm_per_unit = viewing_distance_mm / |tz|`), then applies the same
+ * factor to the lateral components. The result is roughly metric but still an
+ * estimate — depth from a single RGB camera is unreliable.
+ *
+ * Returns `null` for a degenerate depth (|tz| ≈ 0) or non-positive distance, so
+ * the caller leaves the mm fields blank (≠ 0) rather than emitting noise.
+ */
+export function translationToApproxMm(
+  t: Translation,
+  viewing_distance_mm: number,
+): TranslationMm | null {
+  const depth = Math.abs(t.tz);
+  if (!(depth > 1e-6) || !(viewing_distance_mm > 0)) return null;
+  const mmPerUnit = viewing_distance_mm / depth;
+  return { tx_mm: t.tx * mmPerUnit, ty_mm: t.ty * mmPerUnit, tz_mm: t.tz * mmPerUnit };
 }
