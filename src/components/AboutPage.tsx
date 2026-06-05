@@ -1,3 +1,5 @@
+import { OutOfReachPanel } from './LimitationPanels';
+
 export default function AboutPage() {
   return (
     <article className="step-page">
@@ -56,6 +58,8 @@ export default function AboutPage() {
           </li>
         </ul>
       </section>
+
+      <OutOfReachPanel />
 
       <section className="step-section">
         <h2>Source code</h2>

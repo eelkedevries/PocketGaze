@@ -10,6 +10,7 @@ import {
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
 import ExportButton from '../components/ExportButton';
+import { SamplingRatePanel } from '../components/LimitationPanels';
 import { FrameTimer, type FrameTick } from '../lib/frameTiming';
 import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
@@ -153,6 +154,8 @@ function Step1LiveDemo() {
             : 'Timing via requestVideoFrameCallback.'
           : 'Start the camera to see the effective frame rate and per-frame timing. Processing stays on your device.'}
       </p>
+
+      <SamplingRatePanel />
     </div>
   );
 }

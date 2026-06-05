@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
+import { NoCornealReflectionPanel } from '../components/LimitationPanels';
 import { FaceFeatureExtractor, type FaceFeatures } from '../lib/featureExtraction';
 import type { HeadPose } from '../lib/headPose';
 import {
@@ -405,6 +406,8 @@ function Step3LiveDemo() {
         Samples labelled <strong>uncertain</strong> are too head-motion-affected to trust and
         are rejected by later event detection rather than mislabelled as gaze shifts.
       </p>
+
+      <NoCornealReflectionPanel />
     </div>
   );
 }

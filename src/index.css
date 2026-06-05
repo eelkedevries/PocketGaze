@@ -685,6 +685,34 @@ body {
   background: rgba(17, 24, 39, 0.96);
 }
 
+.limitation-panel {
+  border: 1px solid var(--colour-border);
+  border-left: 4px solid #ffd166;
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.limitation-panel__title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.limitation-panel__caption {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--colour-muted);
+}
+
+.limitation-figure {
+  max-width: 100%;
+  height: auto;
+  align-self: flex-start;
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);

@@ -262,3 +262,8 @@ Outstanding items are human-run tasks:
   estimated end-to-end latency readout (measured gaze-update + render cadences). Falls back to a
   clearly-labelled pointer stand-in when uncalibrated. Latency/window panel gated by the master
   control. No new tracking/filtering maths.
+- `048_honesty_limitation_panels.md` — three honesty/limitation panels
+  (`src/components/LimitationPanels.tsx`): a Step 1 sampling-rate panel with a coarse-vs-fine
+  saccade SVG figure (Nyquist point), a Step 3 "no corneal reflection → head-motion drift"
+  panel, and an About-page "out of reach" section (microsaccades, pupillometry; no fake
+  detector). Static content only, cautious British English (§6.3). No tracking code.
