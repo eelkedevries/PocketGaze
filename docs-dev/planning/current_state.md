@@ -291,3 +291,8 @@ Outstanding items are human-run tasks:
   `saccadeSpeedPerSec` threshold as a dashed line and threshold crossings shaded, making the
   saccade-detection criterion observable. Invalid samples break the trace. Visualisation only,
   session model unchanged.
+- `054_calibration_warped_grid.md` — Step 5 warped-grid visualisation: a regular eye-local input
+  grid (−1…1) mapped forward through the fitted mapping (`applyMapping`) to screen positions,
+  drawn over a screen schematic with an honest caption (linear mapping → affine mesh; edge stretch
+  foreshadows edge/corner error, §6.3). Clear placeholder before any mapping exists. Reuses `022`;
+  visualisation only.

@@ -460,6 +460,17 @@ function Step5LiveDemo() {
         </div>
       )}
 
+      {result ? (
+        <CalibrationWarpGrid mapping={result.mapping} />
+      ) : (
+        cameraReady && (
+          <p className="panel__empty">
+            Run the calibration to see the fitted mapping drawn as a warped grid (a deformation
+            field from eye-local input to screen position).
+          </p>
+        )
+      )}
+
       {result && (
         <>
           <div className="gaze-box" aria-label="Calibrated screen-gaze estimate">
@@ -497,6 +508,73 @@ function Step5LiveDemo() {
         </>
       )}
     </div>
+  );
+}
+
+// --- Calibration warped grid (054) ------------------------------------------
+
+// Visualise the fitted mapping as a deformation field: a regular grid in the
+// eye-local INPUT space (combined x/y in −1…1) mapped FORWARD through the fitted
+// mapping to screen positions. The deformation shows what calibration does; edge
+// cells that stretch most foreshadow the larger edge/corner validation error
+// (§6.3 — qualitative, not a measured accuracy field). Reuses `applyMapping`.
+const WARP_GRID = 7;
+const WARP_SIZE = 220;
+const WARP_MARGIN = 20;
+
+function CalibrationWarpGrid({ mapping }: { mapping: GazeCalibrationResult['mapping'] }) {
+  const side = WARP_SIZE + 2 * WARP_MARGIN;
+  const axis = Array.from({ length: WARP_GRID }, (_, i) => -1 + (2 * i) / (WARP_GRID - 1));
+  // node[row][col] = screen position for eye-local (cx, cy).
+  const nodes = axis.map((cy) =>
+    axis.map((cx) => {
+      const p = applyMapping(mapping, [1, cx, cy, cx, cy, cx, cy]);
+      return { x: WARP_MARGIN + p.x * WARP_SIZE, y: WARP_MARGIN + p.y * WARP_SIZE };
+    }),
+  );
+
+  const lines: Array<[{ x: number; y: number }, { x: number; y: number }]> = [];
+  for (let r = 0; r < WARP_GRID; r++) {
+    for (let c = 0; c < WARP_GRID; c++) {
+      if (c + 1 < WARP_GRID) lines.push([nodes[r][c], nodes[r][c + 1]]);
+      if (r + 1 < WARP_GRID) lines.push([nodes[r][c], nodes[r + 1][c]]);
+    }
+  }
+
+  return (
+    <figure className="warp-grid">
+      <svg
+        viewBox={`0 0 ${side} ${side}`}
+        width={side}
+        height={side}
+        role="img"
+        aria-label="Warped calibration grid: a regular eye-local grid mapped to screen positions"
+      >
+        <rect
+          x={WARP_MARGIN}
+          y={WARP_MARGIN}
+          width={WARP_SIZE}
+          height={WARP_SIZE}
+          fill="none"
+          stroke="#cbd5e1"
+          strokeDasharray="3 3"
+          strokeWidth={1}
+        />
+        {lines.map(([a, b], i) => (
+          <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#2563eb" strokeWidth={1} />
+        ))}
+        {nodes.flat().map((n, i) => (
+          <circle key={i} cx={n.x} cy={n.y} r={2} fill="#1d4ed8" />
+        ))}
+      </svg>
+      <figcaption className="error-map__caption">
+        The dashed square is the screen. The blue mesh is a regular grid of eye-local inputs
+        (−1…1) mapped <strong>forward</strong> through your fitted calibration to screen positions —
+        the deformation calibration applies. The mapping is linear, so the mesh is an affine
+        (scaled/sheared) grid; where it stretches most, a small eye-local change moves the estimate
+        most, and edge/corner targets tend to show the largest validation error (§6.3, qualitative).
+      </figcaption>
+    </figure>
   );
 }
 

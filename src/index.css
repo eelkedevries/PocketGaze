@@ -774,6 +774,18 @@ body {
   color: var(--colour-muted);
 }
 
+.warp-grid {
+  margin: 0;
+}
+
+.warp-grid svg {
+  max-width: 100%;
+  height: auto;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);
