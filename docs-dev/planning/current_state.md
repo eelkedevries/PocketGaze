@@ -235,3 +235,8 @@ Outstanding items are human-run tasks:
   error (reusing `041`). Its velocity/windowed-gain panel is gated by the existing master
   control (`useImplementationDetails`, no second toggle). Framed as candidate/qualitative;
   degrades gracefully with no gaze. Display-only (no session rows written).
+- `043_fixation_aggregation_lib.md` — pure fixation aggregation (`src/lib/fixationAggregation.ts`):
+  `scanpath` (ordered duration-carrying nodes + inter-node segments), `heatmap` (Gaussian-splat
+  density grid normalised to its peak, duration- or count-weighted), plus `totalDwellMs` and
+  `fixationBounds`. Normalised coordinates; documented degenerate handling. Unit-tested (order/
+  durations, clustered peak, weighting, empty). No rendering/demo (that is `044`).
