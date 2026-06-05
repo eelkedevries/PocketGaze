@@ -39,7 +39,10 @@ gap is work still to be done.
   screen-gaze estimate on held-out targets. Validation is kept distinct from calibration:
   held-out samples are written as `quality` rows tagged `task_phase: 'validation'`
   (carrying the target in CSS px + normalised and the concurrent estimate) plus a
-  `stimulus` marker per target. The metric readout/error map is `036`.
+  `stimulus` marker per target. The Step 5 demo (`036`) reports accuracy and precision
+  as separate figures plus BCEA, and draws a screen-schematic error map (per-target
+  offset vector + precision/BCEA ellipse via `src/lib/validationErrorMap.ts`); the
+  per-target table sits under the master "Show implementation details" control.
 - **eek-a-dev workflow** — `AGENTS.md`/`CLAUDE.md`, agent guides, prompt files, scripts
   (`validate-prompts.sh`, `check-public-build.sh`, `new-prompt.sh`), and GitHub Actions
   (`check-build.yml`, `deploy-pages.yml`).
@@ -190,3 +193,10 @@ Outstanding items are human-run tasks:
   marker per target. Extended `QualityRow` additively with `TaskStimulusFields` +
   `ScreenGazeFields` (existing CSV columns; no new row type). Wired into the Step 5 demo
   after calibration, exposing the latest fitted estimate. No metric display (that is `036`).
+- `036_validation_demo.md` — wired `034`/`035` into Step 5: on validation completion it
+  computes per-target and aggregate accuracy, precision (RMS-S2S), and BCEA, shows accuracy
+  and precision as separate readouts with cautious §6.3 wording, and renders a screen-
+  schematic error map (offset vector + precision/BCEA ellipse per target). Added pure,
+  unit-tested helpers `src/lib/validationErrorMap.ts` (`validationInputsFromRows`,
+  `precisionEllipse` — covariance-eigen ellipse whose area equals BCEA). Per-target table
+  shows only under the master control.
