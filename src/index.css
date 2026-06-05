@@ -602,6 +602,59 @@ body {
   border-radius: var(--radius);
 }
 
+.aoi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.aoi__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.aoi__panel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  touch-action: none;
+}
+
+.aoi__box {
+  position: absolute;
+  border: 1px dashed var(--colour-border);
+  border-radius: 0.3rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.aoi__box--active {
+  border-color: #5be39b;
+  background: rgba(91, 227, 155, 0.14);
+}
+
+.aoi__label {
+  font-size: 0.72rem;
+  color: var(--colour-muted);
+  padding: 0.15rem 0.35rem;
+}
+
+.aoi__row--active {
+  background: rgba(91, 227, 155, 0.12);
+}
+
+.content-demo__subheading {
+  margin: 0.5rem 0 0;
+  font-size: 1.05rem;
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);

@@ -251,3 +251,8 @@ Outstanding items are human-run tasks:
   per-AOI dwell / fixation count / TTFF (relative to task start) plus totals and an unassigned
   count. Content-relative coordinates; documented zeros/blanks for empty inputs. Unit-tested
   (dwell/count sums, earliest-onset TTFF, out-of-AOI/unmapped exclusion, overlap). No demo (`046`).
+- `046_aoi_dwell_demo.md` — AOI dwell-analysis demo (`src/demos/aoiTask.tsx`) on Step 7: a
+  reading/viewing panel with four labelled AOIs in content coordinates; the pointer stand-in
+  accumulates per-visit content-space fixations scored by `045` into a per-AOI dwell / fixation
+  count / TTFF table, with the currently-fixated AOI highlighted. AOI-rectangle and raw
+  assignment panels gated by the master control. Qualitative over the stand-in (§6.3).

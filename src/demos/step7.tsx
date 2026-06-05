@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from 'react';
 import { ContentMapper, type ContentRect } from '../lib/contentCoordinates';
+import AoiTask from './aoiTask';
 import { StimulusLogger } from '../lib/stimulusLog';
 import { SessionStore } from '../lib/sessionStore';
 import type { ContentMappedFields, StimulusRow } from '../types/session';
@@ -342,6 +343,9 @@ function Step7LiveDemo() {
           </p>
         </div>
       </div>
+
+      <h3 className="content-demo__subheading">Areas of interest — the applied output</h3>
+      <AoiTask />
     </div>
   );
 }
