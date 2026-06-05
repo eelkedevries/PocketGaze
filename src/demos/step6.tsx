@@ -21,6 +21,8 @@ import {
   type EventSampleInput,
 } from '../lib/eventDetection';
 import { meanDegreesPerNormalised } from '../lib/visualAngle';
+import type { Fixation } from '../lib/fixationAggregation';
+import ScanpathHeatmap from './scanpathHeatmap';
 import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
 
@@ -50,6 +52,8 @@ interface Step6DemoContextValue {
   recentEvents: DetectedEvent[];
   /** Representative angular scale (estimated degrees per normalised unit), or null. */
   degPerNorm: number | null;
+  /** Accumulated fixation centroids (eye-local mapped to 0–1), for scanpath/heatmap (044). */
+  fixations: Fixation[];
   onStreamChange: (stream: MediaStream | null) => void;
   onVideoElement: (video: HTMLVideoElement | null) => void;
 }
@@ -92,12 +96,16 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
   const traceRef = useRef<TraceSample[]>([]);
   // Accumulate valid event-detection inputs (used by detectEvents).
   const eventInputsRef = useRef<EventSampleInput[]>([]);
+  // Accumulated fixation centroids and the start times already collected.
+  const fixationsRef = useRef<Fixation[]>([]);
+  const seenFixationStartsRef = useRef<Set<number>>(new Set());
 
   const [state, setState] = useState<DemoState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [traceSamples, setTraceSamples] = useState<TraceSample[]>([]);
   const [recentEvents, setRecentEvents] = useState<DetectedEvent[]>([]);
   const [degPerNorm, setDegPerNorm] = useState<number | null>(null);
+  const [fixations, setFixations] = useState<Fixation[]>([]);
 
   const stopLoop = useCallback(() => {
     runningRef.current = false;
@@ -205,6 +213,32 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
             // Keep last 8 events.
             return merged.slice(-8);
           });
+          // Accumulate fixation centroids (new fixations only) for scanpath/heatmap (044).
+          // The eye-local signal is ~[-1, 1]; map it into a 0–1 display space.
+          const toUnit = (v: number) => Math.min(1, Math.max(0, (v + 1) / 2));
+          let added = false;
+          for (const ev of detected) {
+            if (ev.event_type !== 'fixation_candidate') continue;
+            if (seenFixationStartsRef.current.has(ev.event_start_ms)) continue;
+            const within = eventInputsRef.current.filter(
+              (s) => s.timeMs >= ev.event_start_ms && s.timeMs <= ev.event_end_ms,
+            );
+            if (within.length === 0) continue;
+            const cx = within.reduce((a, s) => a + s.x, 0) / within.length;
+            const cy = within.reduce((a, s) => a + s.y, 0) / within.length;
+            seenFixationStartsRef.current.add(ev.event_start_ms);
+            fixationsRef.current.push({
+              x: toUnit(cx),
+              y: toUnit(cy),
+              durationMs: ev.event_end_ms - ev.event_start_ms,
+            });
+            added = true;
+          }
+          if (added) {
+            // Keep the most recent fixations for a manageable visualisation.
+            fixationsRef.current = fixationsRef.current.slice(-40);
+            setFixations([...fixationsRef.current]);
+          }
         }
         // Representative angular scale from recent samples, for estimated
         // saccade amplitude in degrees (040). Bounded scan over the last samples.
@@ -245,11 +279,14 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       lastDetectRef.current = 0;
       traceRef.current = [];
       eventInputsRef.current = [];
+      fixationsRef.current = [];
+      seenFixationStartsRef.current = new Set();
       filterRef.current!.reset();
       suppressorRef.current!.reset();
       setTraceSamples([]);
       setRecentEvents([]);
       setDegPerNorm(null);
+      setFixations([]);
       setState('loading');
       setErrorMessage(null);
 
@@ -291,10 +328,21 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       traceSamples,
       recentEvents,
       degPerNorm,
+      fixations,
       onStreamChange,
       onVideoElement,
     }),
-    [store, state, errorMessage, traceSamples, recentEvents, degPerNorm, onStreamChange, onVideoElement],
+    [
+      store,
+      state,
+      errorMessage,
+      traceSamples,
+      recentEvents,
+      degPerNorm,
+      fixations,
+      onStreamChange,
+      onVideoElement,
+    ],
   );
 
   return <Step6DemoContext.Provider value={value}>{children}</Step6DemoContext.Provider>;
@@ -432,8 +480,16 @@ function eventClass(type: string): string {
 // --- Live demo ---------------------------------------------------------------
 
 function Step6LiveDemo() {
-  const { state, errorMessage, traceSamples, recentEvents, degPerNorm, onStreamChange, onVideoElement } =
-    useStep6Demo();
+  const {
+    state,
+    errorMessage,
+    traceSamples,
+    recentEvents,
+    degPerNorm,
+    fixations,
+    onStreamChange,
+    onVideoElement,
+  } = useStep6Demo();
   const running = state === 'tracking' || state === 'no-face';
 
   return (
@@ -493,6 +549,8 @@ function Step6LiveDemo() {
               IPD-based angular scale (assumed IPD, camera FOV, and screen size), not a measurement.
             </p>
           </div>
+
+          <ScanpathHeatmap fixations={fixations} />
         </>
       )}
     </div>

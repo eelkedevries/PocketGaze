@@ -240,3 +240,9 @@ Outstanding items are human-run tasks:
   density grid normalised to its peak, duration- or count-weighted), plus `totalDwellMs` and
   `fixationBounds`. Normalised coordinates; documented degenerate handling. Unit-tested (order/
   durations, clustered peak, weighting, empty). No rendering/demo (that is `044`).
+- `044_scanpath_heatmap_demo.md` — scanpath + heatmap demo (`src/demos/scanpathHeatmap.tsx`) on
+  Step 6: the provider accumulates fixation centroids (eye-local mapped to 0–1) from detected
+  fixation candidates; the component draws an ordered dwell-sized scanpath and a toggleable
+  Gaussian heatmap (reusing `043`), with a prominent over-interpretation caveat (§6.3). Fixation
+  list + heatmap-parameter panels gated by the existing master control. Degrades gracefully when
+  empty/no-face.
