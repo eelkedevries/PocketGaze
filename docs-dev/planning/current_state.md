@@ -205,3 +205,9 @@ Outstanding items are human-run tasks:
   over a documented 30-sample window, and a compact `LivePrecision` component
   (`src/components/LivePrecision.tsx`) mounted in the Step 4 eye-local demo. Normalised units,
   "lower is steadier", not a validated device figure; no session-model changes. Unit-tested.
+- `038_visual_angle_estimation_lib.md` — pure visual-angle estimation (`src/lib/visualAngle.ts`):
+  IPD-based pinhole `estimateViewingDistanceMm`, `degreesPerPixel`/`degreesPerNormalised`, and
+  `estimateAngularScale` returning distance + conversion factors + `is_estimate: true` and the
+  assumptions (IPD ~63 mm, default HFOV, CSS px pitch, screen dim). Degenerate inputs fall back
+  to a documented finite distance. Everything is an estimate (§6.3). Unit-tested (hand-computed
+  distance, monotonicity, degenerate guards). No session-model wiring (that is `039`).
