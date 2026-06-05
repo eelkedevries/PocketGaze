@@ -12,6 +12,7 @@ import CameraPreview from '../components/CameraPreview';
 import CalibrationTask from './calibrationTask';
 import ValidationTask from './validationTask';
 import PursuitTask from './pursuitTask';
+import GazeContingentTask from './gazeContingentTask';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
 import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
 import { computeEyeLocalSignal, type EyeLocalSignal } from '../lib/eyeLocalSignal';
@@ -420,6 +421,8 @@ function Step5LiveDemo() {
           {validation && <ValidationReadout validation={validation} />}
 
           <PursuitTask getEstimate={getEstimate} />
+
+          <GazeContingentTask getEstimate={getEstimate} />
         </>
       )}
     </div>

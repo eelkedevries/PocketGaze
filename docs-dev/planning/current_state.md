@@ -256,3 +256,9 @@ Outstanding items are human-run tasks:
   accumulates per-visit content-space fixations scored by `045` into a per-AOI dwell / fixation
   count / TTFF table, with the currently-fixated AOI highlighted. AOI-rectangle and raw
   assignment panels gated by the master control. Qualitative over the stand-in (§6.3).
+- `047_gaze_contingent_demo.md` — gaze-contingent moving-window demo
+  (`src/demos/gazeContingentTask.tsx`) in Step 5: content masked by a spotlight that follows the
+  live One Euro–filtered gaze (reusing `OneEuroVectorFilter`), with a window-radius slider and an
+  estimated end-to-end latency readout (measured gaze-update + render cadences). Falls back to a
+  clearly-labelled pointer stand-in when uncalibrated. Latency/window panel gated by the master
+  control. No new tracking/filtering maths.
