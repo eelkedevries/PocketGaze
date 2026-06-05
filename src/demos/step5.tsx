@@ -10,6 +10,7 @@ import {
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
 import CalibrationTask from './calibrationTask';
+import ValidationTask from './validationTask';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
 import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
 import { computeEyeLocalSignal, type EyeLocalSignal } from '../lib/eyeLocalSignal';
@@ -38,6 +39,8 @@ interface Step5DemoContextValue {
   state: DemoState;
   errorMessage: string | null;
   getSignal: () => EyeLocalSignal | null;
+  /** Latest fitted screen-gaze estimate, for the held-out validation task (035). */
+  getEstimate: () => ScreenGazeEstimate;
   result: GazeCalibrationResult | null;
   samples: GazeCalibrationSample[];
   gaze: ScreenGazeEstimate;
@@ -77,6 +80,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
   const lastUiUpdateRef = useRef(0);
   const frameCountRef = useRef(0);
   const signalRef = useRef<EyeLocalSignal | null>(null);
+  const estimateRef = useRef<ScreenGazeEstimate>({ gaze_available: false });
 
   const [state, setState] = useState<DemoState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -123,6 +127,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
     signalRef.current = signal;
 
     const estimate = provider.estimate({ timeMs: ts, eyeLocal: signal });
+    estimateRef.current = estimate;
 
     if (ts - lastUiUpdateRef.current >= 100) {
       lastUiUpdateRef.current = ts;
@@ -209,6 +214,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
   }, [provider]);
 
   const getSignal = useCallback(() => signalRef.current, []);
+  const getEstimate = useCallback(() => estimateRef.current, []);
 
   const onVideoElement = useCallback((video: HTMLVideoElement | null) => {
     videoElRef.current = video;
@@ -228,6 +234,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       state,
       errorMessage,
       getSignal,
+      getEstimate,
       result,
       samples,
       gaze,
@@ -241,6 +248,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       state,
       errorMessage,
       getSignal,
+      getEstimate,
       result,
       samples,
       gaze,
@@ -273,6 +281,7 @@ function Step5LiveDemo() {
     state,
     errorMessage,
     getSignal,
+    getEstimate,
     store,
     result,
     gaze,
@@ -343,6 +352,13 @@ function Step5LiveDemo() {
             {result.recalibrationSuggested &&
               'Quality is low or there were too few points — consider recalibrating in better lighting.'}
           </p>
+
+          <p className="timing-demo__note">
+            Now <strong>validate</strong> on fresh targets the calibration never saw. These
+            held-out points are recorded so accuracy and precision can be reported separately from
+            the calibration fit.
+          </p>
+          <ValidationTask store={store} getEstimate={getEstimate} />
         </>
       )}
     </div>

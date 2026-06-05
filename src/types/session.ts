@@ -255,9 +255,18 @@ export interface StimulusRow
   row_type: 'stimulus';
 }
 
-/** An optional signal-quality summary row. */
+/**
+ * An optional signal-quality summary row. Also used to record held-out
+ * VALIDATION samples (`035`): a `quality` row tagged `task_phase: 'validation'`
+ * carries the validation target (CSS px + normalised, via `TaskStimulusFields`)
+ * and the concurrent screen-gaze estimate (via `ScreenGazeFields`) so accuracy
+ * and precision can be measured on points the calibration never saw (§3.5, §6.3).
+ * Validation rows stay distinct from `calibration` rows through `task_phase`.
+ */
 export interface QualityRow
   extends TimingFields,
+    TaskStimulusFields,
+    ScreenGazeFields,
     TrackingQualityFields,
     ProcessingMetadataFields {
   row_type: 'quality';

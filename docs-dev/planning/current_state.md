@@ -31,6 +31,15 @@ gap is work still to be done.
   session-relative `time_ms` clock; later capture/tracking modules write to it rather than
   inventing their own shapes. Export (prompt 031) will serialise this store. Unit-tested
   with `node --test` (`npm run test`).
+- **Validation (held-out accuracy/precision)** — a pure metrics library
+  (`src/lib/validationMetrics.ts`, `034`) computing the field-standard data-quality
+  metrics (accuracy, RMS-S2S precision, BCEA) in normalised units, unit-tested with
+  `node --test`; and a follow-the-dots **validation** task (`src/demos/validationTask.tsx`,
+  `035`) presenting a grid offset from the 9 calibration points, capturing the fitted
+  screen-gaze estimate on held-out targets. Validation is kept distinct from calibration:
+  held-out samples are written as `quality` rows tagged `task_phase: 'validation'`
+  (carrying the target in CSS px + normalised and the concurrent estimate) plus a
+  `stimulus` marker per target. The metric readout/error map is `036`.
 - **eek-a-dev workflow** — `AGENTS.md`/`CLAUDE.md`, agent guides, prompt files, scripts
   (`validate-prompts.sh`, `check-public-build.sh`, `new-prompt.sh`), and GitHub Actions
   (`check-build.yml`, `deploy-pages.yml`).
@@ -58,9 +67,15 @@ gap is work still to be done.
 
 ## In progress / next
 
-The full implementation queue (`004`–`033`) is **complete**. All step demos are working;
-the pipeline is implemented end-to-end in the browser. No further implementation prompts
-are planned. Outstanding items are human-run tasks:
+The original implementation queue (`004`–`033`) is **complete**: all step demos work and
+the pipeline runs end-to-end in the browser. A follow-on queue (`034`–`056`,
+`docs-dev/agent/prompts/000_index_new_prompts.md`) adds validation, visual-angle units,
+eye-movement completeness, honesty/context panels, and explanatory interactions; it is
+being worked through in order (`034`, `035` done). These prompts are self-contained and
+record additive schema changes in their own `Data contracts touched` sections rather than
+amending the specification; the spec (v1.6) is reconciled separately if adopted.
+
+Outstanding items are human-run tasks:
 
 - Physical multi-device verification (Android Chrome/Firefox; iOS Safari status) against
   `docs-dev/reviews/runtime_qa_checklist.md`.
@@ -163,3 +178,15 @@ are planned. Outstanding items are human-run tasks:
   working demos, camera permission flow, and CSV export; removed all scaffold/placeholder
   wording. Updated `current_state.md` to reflect the fully-implemented pipeline. Added
   camera-permission and WASM-load-failure troubleshooting to `docs/troubleshooting.md`.
+- `034_validation_metrics_lib.md` — pure validation metrics (`src/lib/validationMetrics.ts`):
+  accuracy (mean/median offset), precision (RMS-S2S), BCEA (default P = 0.68, degenerate-
+  guarded), and `perTargetMetrics` with an aggregate summary, all in normalised units
+  (degree conversion deferred to `040`). Degenerate inputs return finite documented values.
+  Unit-tested with `node --test`, including a hand-checked BCEA.
+- `035_validation_task.md` — follow-the-dots validation task (`src/demos/validationTask.tsx`)
+  presenting a held-out grid offset from the 9 calibration points, capturing the fitted
+  provider-A estimate after a settle period and writing `quality` rows tagged
+  `task_phase: 'validation'` (target CSS px + normalised + the estimate) plus a `stimulus`
+  marker per target. Extended `QualityRow` additively with `TaskStimulusFields` +
+  `ScreenGazeFields` (existing CSV columns; no new row type). Wired into the Step 5 demo
+  after calibration, exposing the latest fitted estimate. No metric display (that is `036`).
