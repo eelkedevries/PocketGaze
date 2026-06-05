@@ -170,6 +170,27 @@ export function iodPixels(
   return Math.hypot(dx, dy);
 }
 
+/**
+ * Mean angular scale (degrees per normalised screen unit) across samples that
+ * carry one, averaging the x and y factors into a single isotropic estimate for
+ * converting a scalar normalised quantity (e.g. accuracy, amplitude) to
+ * approximate degrees (`040`). Returns `null` when no sample carries a scale, so
+ * the caller omits the degree figure rather than inventing one.
+ */
+export function meanDegreesPerNormalised(
+  samples: ReadonlyArray<{ deg_per_norm_x?: number; deg_per_norm_y?: number }>,
+): number | null {
+  let sum = 0;
+  let n = 0;
+  for (const s of samples) {
+    if (s.deg_per_norm_x != null && s.deg_per_norm_y != null) {
+      sum += (s.deg_per_norm_x + s.deg_per_norm_y) / 2;
+      n += 1;
+    }
+  }
+  return n > 0 ? sum / n : null;
+}
+
 export interface Translation {
   tx: number;
   ty: number;

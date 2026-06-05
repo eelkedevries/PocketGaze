@@ -115,6 +115,8 @@ describe('detectEvents — saccades and head-motion labelling', () => {
     assert.strictEqual(saccades.length, 1);
     assert.strictEqual(saccades[0].event_type, 'saccade_head_still');
     assert.strictEqual(saccades[0].head_motion_label, 'low');
+    // The saccade amplitude is the 0.6-unit eye-local displacement.
+    assert.ok(Math.abs(saccades[0].amplitude - 0.6) < 1e-9, `amplitude=${saccades[0].amplitude}`);
     // Two fixations bracket the saccade.
     assert.strictEqual(events.filter((e) => e.event_type === 'fixation_candidate').length, 2);
   });

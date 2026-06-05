@@ -7,6 +7,7 @@ import {
   estimateAngularScale,
   iodPixels,
   translationToApproxMm,
+  meanDegreesPerNormalised,
   FALLBACK_DISTANCE_MM,
   DEFAULT_ASSUMED_IPD_MM,
 } from './visualAngle.ts';
@@ -97,5 +98,20 @@ describe('translationToApproxMm', () => {
   it('returns null for a degenerate depth or non-positive distance', () => {
     assert.equal(translationToApproxMm({ tx: 1, ty: 1, tz: 0 }, 600), null);
     assert.equal(translationToApproxMm({ tx: 1, ty: 1, tz: 2 }, 0), null);
+  });
+});
+
+describe('meanDegreesPerNormalised', () => {
+  it('averages the x/y factors across samples that carry a scale', () => {
+    const samples = [
+      { deg_per_norm_x: 8, deg_per_norm_y: 12 }, // mean 10
+      { deg_per_norm_x: 10, deg_per_norm_y: 10 }, // mean 10
+      { face_quality: 0 }, // no scale -> skipped
+    ];
+    assert.equal(meanDegreesPerNormalised(samples), 10);
+  });
+
+  it('returns null when no sample carries an angular scale', () => {
+    assert.equal(meanDegreesPerNormalised([{}, { deg_per_norm_x: 5 }]), null);
   });
 });

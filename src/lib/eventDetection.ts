@@ -73,6 +73,13 @@ export interface DetectedEvent {
   event_confidence: number;
   /** Aggregate head-motion label over the event interval (§5). */
   head_motion_label: HeadMotionLabel;
+  /**
+   * Spatial amplitude of the event: the straight-line eye-local displacement
+   * (normalised units) from the first to the last sample of the run. Most
+   * meaningful for saccades; an estimated degree amplitude is layered on at
+   * display time using the angular scale (`040`).
+   */
+  amplitude: number;
 }
 
 const MOTION_ORDER: Record<HeadMotionLabel, number> = { low: 0, moderate: 1, uncertain: 2 };
@@ -184,6 +191,7 @@ export function detectEvents(
         event_end_ms: seg.endMs,
         event_confidence: clamp01(headConfidenceFactor(seg.headLabel) * tightness),
         head_motion_label: seg.headLabel,
+        amplitude: amplitudeOf(samples, seg.startIndex, seg.endIndex),
       });
     } else {
       const peakSpeed = peakSpeedOf(samples, seg.startIndex, seg.endIndex);
@@ -195,6 +203,7 @@ export function detectEvents(
         event_end_ms: seg.endMs,
         event_confidence: clamp01(headConfidenceFactor(seg.headLabel) * margin),
         head_motion_label: seg.headLabel,
+        amplitude: amplitudeOf(samples, seg.startIndex, seg.endIndex),
       });
     }
   }
@@ -214,6 +223,13 @@ function dispersionOf(samples: EventSampleInput[], start: number, end: number): 
     maxY = Math.max(maxY, samples[i].y);
   }
   return maxX - minX + (maxY - minY);
+}
+
+/** Straight-line eye-local displacement (units) from the first to last sample. */
+function amplitudeOf(samples: EventSampleInput[], start: number, end: number): number {
+  const a = samples[start];
+  const b = samples[end];
+  return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
 /** Peak inter-sample speed (units/s) across an inclusive sample range. */

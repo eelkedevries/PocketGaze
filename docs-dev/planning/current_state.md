@@ -218,3 +218,9 @@ Outstanding items are human-run tasks:
   face). Added pure helpers `iodPixels` and `translationToApproxMm` to `visualAngle.ts`
   (anchors |tz| to the IOD-estimated distance) with unit tests. Extended `SampleRow` and the
   CSV export headers additively. Everything is a documented estimate (§3.3, §6.3).
+- `040_dva_units_and_explainer.md` — degrees-of-visual-angle display: the Step 5 validation
+  readout now shows accuracy/precision in estimated degrees alongside normalised units; Step 6
+  shows an estimated saccade amplitude in degrees. Added `amplitude` (eye-local displacement)
+  to `DetectedEvent` and `meanDegreesPerNormalised` to `visualAngle.ts` (both unit-tested);
+  a "Why degrees of visual angle" explainer panel sits in the Step 5 details. All degree
+  figures are labelled estimates (assumed IPD/FOV/screen size; §6.3); no schema changes.

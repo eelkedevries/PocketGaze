@@ -29,6 +29,7 @@ import {
   type ValidationSummary,
 } from '../lib/validationMetrics';
 import { precisionEllipse, validationInputsFromRows } from '../lib/validationErrorMap';
+import { meanDegreesPerNormalised } from '../lib/visualAngle';
 import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
 
@@ -38,6 +39,12 @@ interface ValidationResult {
   overall: AccuracyResult;
   /** Per-target estimate clouds, index-aligned with `summary.perTarget`. */
   targets: TargetSamples[];
+  /**
+   * Representative angular scale (estimated degrees per normalised unit) over the
+   * session's samples, for showing accuracy/precision in approximate degrees
+   * (`040`). Null when no sample carried a visual-angle estimate.
+   */
+  degPerNorm: number | null;
 }
 
 // Step 5 live demo: run the follow-the-dots calibration task (021), fit the
@@ -248,6 +255,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       summary: perTargetMetrics(inputs.targets),
       overall: accuracy(inputs.pairs),
       targets: inputs.targets,
+      degPerNorm: meanDegreesPerNormalised(store.byType('sample')),
     });
   }, [store]);
 
@@ -418,7 +426,10 @@ function Step5LiveDemo() {
 // --- Validation readout + error map -----------------------------------------
 
 function ValidationReadout({ validation }: { validation: ValidationResult }) {
-  const { summary, overall } = validation;
+  const { summary, overall, degPerNorm } = validation;
+  const deg = (norm: number) => (degPerNorm != null ? `≈ ${fmt(norm * degPerNorm, 2)}°` : null);
+  const accuracyDeg = deg(summary.meanAccuracy);
+  const precisionDeg = deg(summary.meanPrecisionRmsS2S);
   return (
     <div className="validation-result">
       <div className="validation-result__figures">
@@ -427,19 +438,29 @@ function ValidationReadout({ validation }: { validation: ValidationResult }) {
           <span className="motion-label__value">
             {fmt(summary.meanAccuracy, 3)} mean · {fmt(summary.medianAccuracy, 3)} median
           </span>
+          {accuracyDeg && (
+            <span className="live-precision__hint">{accuracyDeg} estimated (visual angle)</span>
+          )}
         </div>
         <div className="motion-label motion-label--low">
           <span className="motion-label__caption">Precision (steady?)</span>
           <span className="motion-label__value">
             RMS-S2S {fmt(summary.meanPrecisionRmsS2S, 3)} · BCEA {fmt(summary.meanBcea, 4)}
           </span>
+          {precisionDeg && (
+            <span className="live-precision__hint">{precisionDeg} estimated (visual angle)</span>
+          )}
         </div>
       </div>
       <p className="timing-demo__note">
         Accuracy and precision answer <em>different</em> questions and are reported separately, in
         normalised screen units (0–1) over {summary.targetCount} held-out targets (
-        {overall.count} samples). These are not measured device-accuracy figures for any particular
-        phone (§6.3); degree units come later.
+        {overall.count} samples)
+        {degPerNorm != null
+          ? ', with an estimated degrees-of-visual-angle figure alongside.'
+          : '.'}{' '}
+        These are not measured device-accuracy figures for any particular phone, and the degree
+        values are estimates built on an assumed IPD, camera FOV, and screen size (§6.3).
       </p>
       <ValidationErrorMap validation={validation} />
     </div>
@@ -576,6 +597,32 @@ function Step5DetailsPanels() {
           </p>
         </section>
       )}
+      <section className="panel">
+        <h3 className="panel__title">Why degrees of visual angle (and why it is only estimated)</h3>
+        <p className="panel__note">
+          Eye tracking is normally reported in <strong>degrees of visual angle</strong> (dva) — how
+          far the eye rotated — rather than pixels, because a degree means the same thing regardless
+          of screen size or how far away the screen is. One degree is roughly the width of a
+          thumbnail held at arm's length.
+        </p>
+        <ul className="panel__list">
+          <li>
+            We estimate your <strong>viewing distance</strong> from the separation between your eyes
+            in the camera image, assuming an average inter-pupillary distance (~63&nbsp;mm) and an
+            approximate camera field of view.
+          </li>
+          <li>
+            From that distance and an assumed screen size we derive an <strong>angular scale</strong>{' '}
+            (degrees per normalised unit) and convert accuracy, precision, and saccade amplitude into
+            approximate degrees.
+          </li>
+          <li>
+            A browser cannot read the true pixel pitch, real IPD, or exact camera FOV, so every
+            degree figure here is an <strong>estimate</strong>, not a measurement (§6.3). Research-grade
+            systems fix the geometry with a chin-rest and a calibrated camera.
+          </li>
+        </ul>
+      </section>
       <section className="panel">
         <h3 className="panel__title">Calibration quality</h3>
         <ul className="panel__list">

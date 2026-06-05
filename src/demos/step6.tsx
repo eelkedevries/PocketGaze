@@ -20,6 +20,7 @@ import {
   type DetectedEvent,
   type EventSampleInput,
 } from '../lib/eventDetection';
+import { meanDegreesPerNormalised } from '../lib/visualAngle';
 import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
 
@@ -47,6 +48,8 @@ interface Step6DemoContextValue {
   errorMessage: string | null;
   traceSamples: TraceSample[];
   recentEvents: DetectedEvent[];
+  /** Representative angular scale (estimated degrees per normalised unit), or null. */
+  degPerNorm: number | null;
   onStreamChange: (stream: MediaStream | null) => void;
   onVideoElement: (video: HTMLVideoElement | null) => void;
 }
@@ -94,6 +97,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [traceSamples, setTraceSamples] = useState<TraceSample[]>([]);
   const [recentEvents, setRecentEvents] = useState<DetectedEvent[]>([]);
+  const [degPerNorm, setDegPerNorm] = useState<number | null>(null);
 
   const stopLoop = useCallback(() => {
     runningRef.current = false;
@@ -202,6 +206,9 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
             return merged.slice(-8);
           });
         }
+        // Representative angular scale from recent samples, for estimated
+        // saccade amplitude in degrees (040). Bounded scan over the last samples.
+        setDegPerNorm(meanDegreesPerNormalised(store.byType('sample').slice(-TRACE_CAPACITY)));
       }
     }
   }, [extractor, store]);
@@ -242,6 +249,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       suppressorRef.current!.reset();
       setTraceSamples([]);
       setRecentEvents([]);
+      setDegPerNorm(null);
       setState('loading');
       setErrorMessage(null);
 
@@ -276,8 +284,17 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<Step6DemoContextValue>(
-    () => ({ store, state, errorMessage, traceSamples, recentEvents, onStreamChange, onVideoElement }),
-    [store, state, errorMessage, traceSamples, recentEvents, onStreamChange, onVideoElement],
+    () => ({
+      store,
+      state,
+      errorMessage,
+      traceSamples,
+      recentEvents,
+      degPerNorm,
+      onStreamChange,
+      onVideoElement,
+    }),
+    [store, state, errorMessage, traceSamples, recentEvents, degPerNorm, onStreamChange, onVideoElement],
   );
 
   return <Step6DemoContext.Provider value={value}>{children}</Step6DemoContext.Provider>;
@@ -415,7 +432,7 @@ function eventClass(type: string): string {
 // --- Live demo ---------------------------------------------------------------
 
 function Step6LiveDemo() {
-  const { state, errorMessage, traceSamples, recentEvents, onStreamChange, onVideoElement } =
+  const { state, errorMessage, traceSamples, recentEvents, degPerNorm, onStreamChange, onVideoElement } =
     useStep6Demo();
   const running = state === 'tracking' || state === 'no-face';
 
@@ -449,18 +466,31 @@ function Step6LiveDemo() {
               <p className="timing-demo__note">No candidate events yet — fixate or make a quick eye movement.</p>
             ) : (
               <ul className="event-stream__list">
-                {[...recentEvents].reverse().map((e, i) => (
-                  <li key={i} className={eventClass(e.event_type as string)}>
-                    <span className="event-tag__type">{eventLabel(e.event_type as string)}</span>
-                    <span className="event-tag__meta">
-                      {e.event_end_ms - e.event_start_ms} ms · confidence {e.event_confidence.toFixed(2)}
-                    </span>
-                  </li>
-                ))}
+                {[...recentEvents].reverse().map((e, i) => {
+                  const isSaccade =
+                    (e.event_type as string).startsWith('saccade') ||
+                    e.event_type === 'uncertain_head_motion';
+                  const ampDeg =
+                    isSaccade && degPerNorm != null
+                      ? ` · ≈ ${(e.amplitude * degPerNorm).toFixed(1)}° (estimated)`
+                      : '';
+                  return (
+                    <li key={i} className={eventClass(e.event_type as string)}>
+                      <span className="event-tag__type">{eventLabel(e.event_type as string)}</span>
+                      <span className="event-tag__meta">
+                        {e.event_end_ms - e.event_start_ms} ms · confidence{' '}
+                        {e.event_confidence.toFixed(2)}
+                        {ampDeg}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             )}
             <p className="timing-demo__note">
               Events are cautious <strong>candidates</strong> only — they are not validated detections (§6.3).
+              Any saccade amplitude in degrees is a rough <strong>estimate</strong> from the
+              IPD-based angular scale (assumed IPD, camera FOV, and screen size), not a measurement.
             </p>
           </div>
         </>
