@@ -50,6 +50,9 @@ interface Step6DemoContextValue {
   errorMessage: string | null;
   traceSamples: TraceSample[];
   recentEvents: DetectedEvent[];
+  /** Live One Euro parameters and a setter (051 demo control). */
+  filterParams: { minCutoff: number; beta: number };
+  setFilterParams: (next: { minCutoff: number; beta: number }) => void;
   /** Representative angular scale (estimated degrees per normalised unit), or null. */
   degPerNorm: number | null;
   /** Accumulated fixation centroids (eye-local mapped to 0–1), for scanpath/heatmap (044). */
@@ -79,6 +82,16 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
 
   const filterRef = useRef<SignalFilterSet | null>(null);
   if (filterRef.current === null) filterRef.current = new SignalFilterSet();
+
+  const [filterParams, setFilterParamsState] = useState<{ minCutoff: number; beta: number }>({
+    minCutoff: DEFAULT_ONE_EURO_PARAMS.minCutoff,
+    beta: DEFAULT_ONE_EURO_PARAMS.beta,
+  });
+  const setFilterParams = useCallback((next: { minCutoff: number; beta: number }) => {
+    // Recreate the filter with the new parameters (reuses the existing maths).
+    filterRef.current = new SignalFilterSet({ ...DEFAULT_ONE_EURO_PARAMS, ...next });
+    setFilterParamsState(next);
+  }, []);
 
   const suppressorRef = useRef<SampleSuppressor | null>(null);
   if (suppressorRef.current === null) suppressorRef.current = new SampleSuppressor();
@@ -327,6 +340,8 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       errorMessage,
       traceSamples,
       recentEvents,
+      filterParams,
+      setFilterParams,
       degPerNorm,
       fixations,
       onStreamChange,
@@ -338,6 +353,8 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       errorMessage,
       traceSamples,
       recentEvents,
+      filterParams,
+      setFilterParams,
       degPerNorm,
       fixations,
       onStreamChange,
@@ -485,6 +502,8 @@ function Step6LiveDemo() {
     errorMessage,
     traceSamples,
     recentEvents,
+    filterParams,
+    setFilterParams,
     degPerNorm,
     fixations,
     onStreamChange,
@@ -513,6 +532,43 @@ function Step6LiveDemo() {
             <SignalTrace samples={traceSamples} />
             <p className="timing-demo__note">
               Horizontal eye-local signal (combined, normalised). Blue shading = blink; red shading = tracking lost.
+            </p>
+          </div>
+
+          <div className="filter-sliders">
+            <label className="content-demo__zoom">
+              One Euro β (speed coefficient)
+              <input
+                type="range"
+                min={0}
+                max={0.05}
+                step={0.001}
+                value={filterParams.beta}
+                onChange={(e) =>
+                  setFilterParams({ ...filterParams, beta: Number(e.target.value) })
+                }
+              />
+              <span className="content-demo__zoom-value">{filterParams.beta.toFixed(3)}</span>
+            </label>
+            <label className="content-demo__zoom">
+              Min cutoff (Hz)
+              <input
+                type="range"
+                min={0.2}
+                max={3}
+                step={0.1}
+                value={filterParams.minCutoff}
+                onChange={(e) =>
+                  setFilterParams({ ...filterParams, minCutoff: Number(e.target.value) })
+                }
+              />
+              <span className="content-demo__zoom-value">{filterParams.minCutoff.toFixed(1)}</span>
+            </label>
+            <p className="timing-demo__note">
+              The trade-off, made felt: a <strong>lower β / lower cutoff</strong> smooths jitter at
+              rest but adds <strong>lag</strong>; a <strong>higher β</strong> cuts lag during fast
+              movement but lets more <strong>jitter</strong> through. Demo control only — the
+              recorded data is unchanged.
             </p>
           </div>
 
@@ -560,9 +616,9 @@ function Step6LiveDemo() {
 // --- Subprocess panels -------------------------------------------------------
 
 function Step6DetailsPanels() {
-  const { state, recentEvents } = useStep6Demo();
+  const { state, recentEvents, filterParams } = useStep6Demo();
   const running = state === 'tracking' || state === 'no-face';
-  const p = DEFAULT_ONE_EURO_PARAMS;
+  const p = { ...DEFAULT_ONE_EURO_PARAMS, ...filterParams };
   const s = DEFAULT_SUPPRESSION_THRESHOLDS;
   const e = DEFAULT_EVENT_DETECTION_THRESHOLDS;
 

@@ -71,6 +71,10 @@ interface Step5DemoContextValue {
   gaze: ScreenGazeEstimate;
   validation: ValidationResult | null;
   onValidationComplete: () => void;
+  /** Number of distinct calibration targets used for the current fit, and total available. */
+  pointsUsed: number | 'all';
+  distinctPointCount: number;
+  refitWithPoints: (k: number | 'all') => void;
   onCalibrationComplete: (samples: GazeCalibrationSample[]) => void;
   onCalibrationCancel: () => void;
   onStreamChange: (stream: MediaStream | null) => void;
@@ -115,6 +119,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
   const [samples, setSamples] = useState<GazeCalibrationSample[]>([]);
   const [gaze, setGaze] = useState<ScreenGazeEstimate>({ gaze_available: false });
   const [validation, setValidation] = useState<ValidationResult | null>(null);
+  const [pointsUsed, setPointsUsed] = useState<number | 'all'>('all');
 
   const stopLoop = useCallback(() => {
     runningRef.current = false;
@@ -231,10 +236,40 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       provider.setMapping(fitted.mapping);
       setResult(fitted);
       setSamples(collected);
+      setPointsUsed('all');
       // A fresh calibration invalidates any previous validation result.
       setValidation(null);
     },
     [provider],
+  );
+
+  // Group collected calibration samples by distinct target, preserving order.
+  const targetGroups = useMemo(() => {
+    const groups = new Map<string, GazeCalibrationSample[]>();
+    for (const s of samples) {
+      const key = `${s.target.x},${s.target.y}`;
+      const g = groups.get(key);
+      if (g) g.push(s);
+      else groups.set(key, [s]);
+    }
+    return [...groups.values()];
+  }, [samples]);
+
+  // 051 demo control: refit on a reduced number of calibration points so the
+  // error rises as points are dropped (reuses the existing fit; no new maths).
+  const refitWithPoints = useCallback(
+    (k: number | 'all') => {
+      const used = k === 'all' ? targetGroups : targetGroups.slice(0, k);
+      const subset = used.flat();
+      if (subset.length === 0) return;
+      const fitted = fitGazeMapping(subset);
+      provider.setMapping(fitted.mapping);
+      setResult(fitted);
+      setPointsUsed(k);
+      // Refit invalidates any prior validation captured against the old mapping.
+      setValidation(null);
+    },
+    [targetGroups, provider],
   );
 
   const onCalibrationCancel = useCallback(() => {
@@ -288,6 +323,9 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       gaze,
       validation,
       onValidationComplete,
+      pointsUsed,
+      distinctPointCount: targetGroups.length,
+      refitWithPoints,
       onCalibrationComplete,
       onCalibrationCancel,
       onStreamChange,
@@ -304,6 +342,9 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       gaze,
       validation,
       onValidationComplete,
+      pointsUsed,
+      targetGroups.length,
+      refitWithPoints,
       onCalibrationComplete,
       onCalibrationCancel,
       onStreamChange,
@@ -339,6 +380,9 @@ function Step5LiveDemo() {
     gaze,
     validation,
     onValidationComplete,
+    pointsUsed,
+    distinctPointCount,
+    refitWithPoints,
     onCalibrationComplete,
     onCalibrationCancel,
     onStreamChange,
@@ -346,6 +390,9 @@ function Step5LiveDemo() {
   } = useStep5Demo();
 
   const cameraReady = state === 'tracking' || state === 'no-face';
+  const dropoutOptions = [distinctPointCount, 5, 3].filter(
+    (k, i, arr) => k > 0 && k <= distinctPointCount && arr.indexOf(k) === i,
+  );
 
   return (
     <div className="feature-demo">
@@ -385,6 +432,30 @@ function Step5LiveDemo() {
           <span className="motion-label__caption">Calibration quality</span>
           <span className="motion-label__value">
             {QUALITY_TEXT[result.quality]} · RMS {fmt(result.rmsError, 3)} (normalised)
+          </span>
+        </div>
+      )}
+
+      {result && distinctPointCount > 0 && (
+        <div className="dropout-control">
+          <span className="dropout-control__label">Calibration points used:</span>
+          {dropoutOptions.map((k) => {
+            const active = pointsUsed === 'all' ? k === distinctPointCount : pointsUsed === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                className={`button${active ? '' : ' button--ghost'}`}
+                aria-pressed={active}
+                onClick={() => refitWithPoints(k === distinctPointCount ? 'all' : k)}
+              >
+                {k}
+              </button>
+            );
+          })}
+          <span className="live-precision__hint">
+            Fewer points → a looser fit and higher error. Watch the RMS above rise as you drop
+            points (demo control; the recorded calibration data is unchanged).
           </span>
         </div>
       )}

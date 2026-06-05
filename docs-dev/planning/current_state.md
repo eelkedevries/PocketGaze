@@ -276,3 +276,8 @@ Outstanding items are human-run tasks:
   linear yaw/pitch term from the displayed eye-local point. With it off the trace drifts under
   head motion; with it on the drift is reduced. A demo control (not a second master toggle),
   display-only (session model unchanged), clearly labelled as illustrative, not geometric (§6.3).
+- `051_one_euro_and_calibration_sliders.md` — two degradation demo controls: a Step 6 One Euro
+  β / min-cutoff slider (recreates `SignalFilterSet` live so the filtered trace trades lag vs
+  jitter; details panel reflects live params), and a Step 5 calibration-points dropout
+  (9/5/3 → refit via the existing `fitGazeMapping`, RMS rises as points drop; refit invalidates
+  prior validation). Demo controls only, no new maths, session model unchanged.

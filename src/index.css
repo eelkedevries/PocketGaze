@@ -725,6 +725,29 @@ body {
   font-size: 0.95rem;
 }
 
+.button--ghost {
+  background: transparent;
+  opacity: 0.7;
+}
+
+.filter-sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dropout-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dropout-control__label {
+  font-size: 0.9rem;
+  color: var(--colour-muted);
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);
