@@ -2,6 +2,32 @@ import type { StepDefinition } from '../steps';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
 import { stepDemos } from '../demos/registry';
 
+// Progressive-disclosure ladder (056): the intro (concept) is always visible;
+// the mechanism tier is a local expander; the maths tier is the deepest tier and
+// is revealed only with the master "Show implementation details" control, so no
+// second global toggle is introduced. Native <details>/<summary> give keyboard
+// focus and the disclosure role for free.
+function DisclosureLevels({ disclosure }: { disclosure: NonNullable<StepDefinition['disclosure']> }) {
+  const { showDetails } = useImplementationDetails();
+  if (!disclosure.mechanism && !disclosure.maths) return null;
+  return (
+    <div className="disclosure">
+      {disclosure.mechanism && (
+        <details className="disclosure__level">
+          <summary className="disclosure__summary">How it works — mechanism</summary>
+          <p className="disclosure__body">{disclosure.mechanism}</p>
+        </details>
+      )}
+      {disclosure.maths && showDetails && (
+        <details className="disclosure__level disclosure__level--maths">
+          <summary className="disclosure__summary">The maths — specialist detail</summary>
+          <p className="disclosure__body">{disclosure.maths}</p>
+        </details>
+      )}
+    </div>
+  );
+}
+
 // Repeated step-page structure shared by every step.
 //
 // Sections, in order:
@@ -37,6 +63,7 @@ export default function StepPage({ step }: { step: StepDefinition }) {
             ))}
           </dl>
         )}
+        {step.disclosure && <DisclosureLevels disclosure={step.disclosure} />}
       </section>
 
       <section className="step-section">

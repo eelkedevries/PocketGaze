@@ -74,9 +74,11 @@ The original implementation queue (`004`–`033`) is **complete**: all step demo
 the pipeline runs end-to-end in the browser. A follow-on queue (`034`–`056`,
 `docs-dev/agent/prompts/000_index_new_prompts.md`) adds validation, visual-angle units,
 eye-movement completeness, honesty/context panels, and explanatory interactions; it is
-being worked through in order (`034`, `035` done). These prompts are self-contained and
-record additive schema changes in their own `Data contracts touched` sections rather than
-amending the specification; the spec (v1.6) is reconciled separately if adopted.
+**complete** (`034`–`056` all run). These prompts are self-contained and record additive
+schema changes in their own `Data contracts touched` sections rather than amending the
+specification; the spec (v1.6) is **not** yet reconciled — additive fields (`viewing_distance_mm`,
+`deg_per_norm_x/y`, `angular_scale_is_estimate`, `head_*_mm`; quality-row validation fields) and
+the new `smooth_pursuit_candidate` event value are flagged here pending a spec update if adopted.
 
 Outstanding items are human-run tasks:
 
@@ -301,3 +303,9 @@ Outstanding items are human-run tasks:
   repeated frames (same media time) and gaps implying dropped source frames, with the cumulative
   dropped/repeated counts from the tick; on the rAF fallback path it notes these can't be observed.
   Reuses the existing timing fields; visualisation only.
+- `056_progressive_disclosure_levels.md` — per-step concept → mechanism → maths disclosure ladder:
+  added an optional additive `disclosure` field to the step content model (`src/steps.ts`,
+  populated for Steps 1–7) and a `DisclosureLevels` component in `StepPage.tsx`. The intro is the
+  always-visible concept; mechanism is a local `<details>` expander; the maths tier appears only
+  with the master control (no second global toggle). §2.6 section order preserved; expanders are
+  native, keyboard-accessible. Content/model addition only.

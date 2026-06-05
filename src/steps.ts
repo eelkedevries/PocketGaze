@@ -51,6 +51,17 @@ export interface StepDefinition {
   usageNote?: string;
   /** Real (static) content for the implementation-details panel, in place of the placeholder. */
   detailsContent?: string[];
+
+  /**
+   * Optional progressive-disclosure ladder (056). The `intro` is the always-visible
+   * CONCEPT tier; `mechanism` is an expandable engineer-level tier; `maths` is the
+   * deepest specialist tier, revealed only with the master "Show implementation
+   * details" control (no second global toggle).
+   */
+  disclosure?: {
+    mechanism?: string;
+    maths?: string;
+  };
 }
 
 export const steps: StepDefinition[] = [
@@ -117,6 +128,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-1',
     navLabel: 'Step 1',
     title: 'Step 1: Capture and timing',
+    disclosure: {
+      mechanism:
+        'Frames arrive from the front camera via getUserMedia. Each is timestamped per frame with requestVideoFrameCallback (which also exposes the source media time), falling back to requestAnimationFrame where that is unavailable. The effective frame rate is derived from the spacing between successive frames, and repeated or skipped source frames are inferred from the media-time stream.',
+      maths:
+        'Effective rate ≈ 1 / median(Δt) over recent inter-frame intervals. A repeated source frame shows the same media time twice; a gap larger than roughly 1.8× the expected interval implies dropped frames. At ~30 Hz the Nyquist limit is ~15 Hz, so movements faster than that (peak saccade velocity, microsaccades) cannot be reconstructed.',
+    },
     intro:
       'Before any analysis can happen, the pipeline needs a reliable stream of frames from the front-facing camera with timing information accurate enough for sample-level work. A single millisecond timestamp per frame is not enough: the browser separates the moment a video frame was composed by the hardware from the moment the pipeline processed it, and that gap matters when you later want to align eye-movement traces with stimulus events. Step 1 acquires frames, attaches the right timestamps, and checks for dropped or repeated frames so that downstream steps can trust the timing they receive.',
     methods: [
@@ -144,6 +161,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-2',
     navLabel: 'Step 2',
     title: 'Step 2: Face and eye features',
+    disclosure: {
+      mechanism:
+        'MediaPipe FaceLandmarker returns 478 facial landmarks. Each eye region is taken from its eye-aspect-ratio (EAR) contour; the iris proxy is the centroid of the five-point iris ring; and the EAR is mapped to an openness score used for blink detection. Only these derived features are kept — never the raw video.',
+      maths:
+        'EAR = (‖p₂−p₆‖ + ‖p₃−p₅‖) / (2·‖p₁−p₄‖) over the six eye-contour points. Openness = clamp((EAR − 0.15) / (0.35 − 0.15), 0, 1); the eye is treated as closed/blinking below EAR ≈ 0.2. The iris-proxy centre is the mean of the five iris-ring landmark coordinates.',
+    },
     intro:
       'Raw camera frames tell you very little on their own. Step 2 applies a face-landmark model to locate the face, isolate each eye region, estimate where the iris or pupil proxy sits within that region, assess whether each eyelid is open or closed, and score the quality of what was detected. These features are the raw material for every downstream step: head pose needs the face geometry, the eye-local signal needs the iris proxy within its eye region, blink suppression needs the eyelid-openness values, and calibrated gaze mapping needs good-quality detections to be worth fitting.',
     methods: [
@@ -172,6 +195,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-3',
     navLabel: 'Step 3',
     title: 'Step 3: Head and phone motion',
+    disclosure: {
+      mechanism:
+        'The facial transformation matrix produced alongside the landmarks is decomposed into head rotation (yaw, pitch, roll) and an approximate translation. Rotational speed and a pose-quality proxy then label each sample low / moderate / uncertain, so head-motion-contaminated intervals can be excluded downstream rather than mistaken for eye movement.',
+      maths:
+        'For a rotation R = Rz·Ry·Rx: pitch = atan2(r₂₁, r₂₂), yaw = atan2(−r₂₀, √(r₀₀² + r₁₀²)), roll = atan2(r₁₀, r₀₀) (a Tait–Bryan/Euler decomposition, robust at the gimbal-lock singularity). Monocular translation — especially depth — is unscaled and approximate.',
+    },
     intro:
       'A camera attached to a phone that moves in 3-D space cannot tell the difference between the eye moving and the head rotating or translating — both change where the iris appears in the frame. Step 3 estimates the head\'s orientation and position from the face geometry, attaches a motion-quality label to each sample, and flags intervals where head or phone movement makes the eye-movement signal too unreliable to use. Without this step, head and phone motion is silently misclassified as eye movement, corrupting the signal with artefacts that look like large, rapid gaze shifts.',
     methods: [
@@ -200,6 +229,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-4',
     navLabel: 'Step 4',
     title: 'Step 4: Eye-local and gaze signals',
+    disclosure: {
+      mechanism:
+        'The iris proxy is normalised within each detected eye region to give the eye-local signal — calibration-light and always available, but not screen gaze. A separate, calibrated regression (or an opt-in model) maps the eye-local feature vector to a screen-gaze estimate; the two signal kinds are kept in distinct fields and never conflated.',
+      maths:
+        'Eye-local coordinate = (iris − regionCentre) / regionHalfSize ∈ [−1, 1] per axis. Screen gaze = C · [1, cₓ, c_y, lₓ, l_y, rₓ, r_y]ᵀ, where the feature vector holds the combined and per-eye eye-local coordinates and C is the fitted coefficient matrix (Step 5).',
+    },
     intro:
       'With face geometry and head pose available, Step 4 produces the main signal of interest. Two quite different signals are possible, and keeping them apart is one of the central design rules of PocketGaze. An eye-local signal measures where the iris proxy sits within the eye region — it reflects eye rotation relative to the head, is calibration-light, and is always available, but it is not the same as where you are looking on the screen. A screen-gaze estimate goes further: it maps the eye-local signal through a calibrated or trained model to give an estimated on-screen x/y position. Screen-gaze requires calibration, validation, and reliability checks before it can be used meaningfully; without those, it is too coarse for fine spatial interpretation.',
     methods: [
@@ -228,6 +263,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-5',
     navLabel: 'Step 5',
     title: 'Step 5: Calibration and personalisation',
+    disclosure: {
+      mechanism:
+        'A follow-the-dots task collects (eye-local feature → known screen target) pairs. A linear least-squares fit maps features to screen coordinates; fit quality is estimated by k-fold cross-validation, and a separate validation task on held-out targets measures on-screen accuracy and precision distinctly from the fit.',
+      maths:
+        'Per axis, solve the ridge-regularised normal equations (AᵀA + λI)·c = Aᵀ·t for the coefficients c. Calibration RMS = √(mean residual²). Validation reports accuracy (mean target–estimate offset), precision (sample-to-sample RMS, “RMS-S2S”), and BCEA — the bivariate contour ellipse area.',
+    },
     intro:
       'A generic gaze model cannot know how you hold your phone, how far from the screen you sit, or the geometry of your particular eye. Without calibration, even a well-engineered pipeline produces screen-gaze estimates that are too coarse for meaningful spatial analysis. Step 5 collects a set of samples at known screen positions — by asking you to follow or tap on a dot — and uses them to fit a user-specific mapping that compensates for your individual physiology, camera placement, and current posture. A held-out validation pass then estimates how well the fitted mapping generalises.',
     methods: [
@@ -256,6 +297,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-6',
     navLabel: 'Step 6',
     title: 'Step 6: Filtering and events',
+    disclosure: {
+      mechanism:
+        'A One Euro filter smooths the eye-local signal, raising its cutoff during fast movement to limit lag and lowering it at rest to limit jitter. Blink and low-quality samples are suppressed, then a velocity/dispersion rule labels cautious fixation and saccade candidates, downgraded by head-motion context.',
+      maths:
+        'One Euro cutoff f_c = f_cmin + β·|ẋ|, with the smoothing factor α = 1 / (1 + (f_s / 2π f_c)). A segment is saccade-like when its inter-sample speed ≥ the threshold (units/s); a fixation candidate is a low-speed run whose dispersion ≤ the limit for at least the minimum duration. All labels are candidates, not validated detections.',
+    },
     intro:
       'Raw eye-movement signals from a smartphone camera are noisy. High-frequency jitter from imperfect landmark tracking, frame-to-frame variability in the iris proxy, and momentary blinks all obscure the underlying signal. Step 6 applies adaptive filtering to reduce noise while preserving genuine rapid movements, suppresses blink intervals, marks low-quality samples, and detects candidate events in the cleaned signal. The raw signal is always preserved alongside its filtered version so the data stays reanalysable. All detected events are labelled cautiously as candidates — without a ground-truth reference, strong event labels would overclaim.',
     methods: [
@@ -284,6 +331,12 @@ export const steps: StepDefinition[] = [
     slug: 'step-7',
     navLabel: 'Step 7',
     title: 'Step 7: Content and stimulus mapping',
+    disclosure: {
+      mechanism:
+        'Screen-gaze coordinates are converted into content-relative coordinates using the content element’s bounding rectangle, accounting for page and element scroll and any CSS transform, so a fixed point keeps a constant content coordinate as the page moves. Fixations in content space are then aggregated per area of interest.',
+      maths:
+        'Content coordinate = (screen − rect.origin) / rect.size, with internal-scroll and transform corrections applied. Per AOI: dwell = Σ fixation durations inside it; fixation count = number assigned; time-to-first-fixation = the earliest in-AOI fixation onset relative to task start.',
+    },
     intro:
       'Screen coordinates alone are not enough to understand what a person was looking at. When content scrolls, zooms, changes layout, or is overlaid by other elements, the same screen x/y position corresponds to different content at different times. Step 7 aligns the eye or gaze signal with the stimulus or content the user was actually viewing, by logging the position, size, and identity of screen elements alongside the tracking data. The result is a content-relative coordinate that remains meaningful even when layout changes — and a stimulus log that lets you later ask not just "where on the screen?" but "which part of the content?".',
     methods: [

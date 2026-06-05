@@ -829,6 +829,34 @@ body {
   color: var(--colour-muted);
 }
 
+.disclosure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.disclosure__level {
+  border: 1px solid var(--colour-border);
+  border-radius: var(--radius);
+  background: var(--colour-surface);
+  padding: 0.3rem 0.7rem;
+}
+
+.disclosure__level--maths {
+  border-left: 4px solid #9b8cff;
+}
+
+.disclosure__summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.35rem 0;
+}
+
+.disclosure__body {
+  margin: 0.3rem 0 0.5rem;
+}
+
 .camera-preview__consent {
   margin: 0;
   color: var(--colour-muted);
