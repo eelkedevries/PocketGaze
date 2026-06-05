@@ -246,3 +246,8 @@ Outstanding items are human-run tasks:
   Gaussian heatmap (reusing `043`), with a prominent over-interpretation caveat (§6.3). Fixation
   list + heatmap-parameter panels gated by the existing master control. Degrades gracefully when
   empty/no-face.
+- `045_aoi_metrics_lib.md` — pure AOI metrics (`src/lib/aoiMetrics.ts`): `aoiContains`,
+  `assignFixationsToAois` (first-match-wins; unmapped left unassigned), and `aoiMetrics` →
+  per-AOI dwell / fixation count / TTFF (relative to task start) plus totals and an unassigned
+  count. Content-relative coordinates; documented zeros/blanks for empty inputs. Unit-tested
+  (dwell/count sums, earliest-onset TTFF, out-of-AOI/unmapped exclusion, overlap). No demo (`046`).
