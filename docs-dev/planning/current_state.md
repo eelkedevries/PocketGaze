@@ -229,3 +229,9 @@ Outstanding items are human-run tasks:
   + mean tracking error, degenerate-guarded), and a cautious `pursuitCandidate` helper. Added
   the additive `smooth_pursuit_candidate` value to the §5 event vocabulary (`EventType`).
   Unit-tested (unit gain, lag/undershoot, tracking error, degenerate). No demo (that is `042`).
+- `042_smooth_pursuit_demo.md` — smooth-pursuit demo (`src/demos/pursuitTask.tsx`) mounted in
+  Step 5 after calibration: animates a moving target, samples the calibrated gaze, draws
+  target/gaze + tracking-error line on a canvas, and shows live pursuit gain + mean tracking
+  error (reusing `041`). Its velocity/windowed-gain panel is gated by the existing master
+  control (`useImplementationDetails`, no second toggle). Framed as candidate/qualitative;
+  degrades gracefully with no gaze. Display-only (no session rows written).
