@@ -15,6 +15,7 @@ import {
   RIGHT_EYE_EAR_IDX,
   LEFT_IRIS_IDX,
   RIGHT_IRIS_IDX,
+  EAR_BLINK_THRESHOLD,
   landmarkBounds,
   type LandmarkLike,
 } from '../lib/eyeGeometry';
@@ -43,6 +44,8 @@ interface Step2DemoContextValue {
   onStreamChange: (stream: MediaStream | null) => void;
   onVideoElement: (video: HTMLVideoElement | null) => void;
   registerCanvas: (canvas: HTMLCanvasElement | null) => void;
+  registerCropCanvas: (canvas: HTMLCanvasElement | null) => void;
+  registerEarCanvas: (canvas: HTMLCanvasElement | null) => void;
 }
 
 const Step2DemoContext = createContext<Step2DemoContextValue | undefined>(undefined);
@@ -137,6 +140,141 @@ function drawOverlay(
   }
 }
 
+// --- Zoomed eye-region crop (052) -------------------------------------------
+
+const EAR_TRACE_MAX = 150;
+
+/**
+ * Draw a magnified crop of one eye region from the current frame, with the iris
+ * ring, the iris-proxy centre, and the eye-local normalisation box overlaid so
+ * the centred −1…1 mapping (the Step 4 eye-local signal) is previewed. Reuses the
+ * existing geometry; no new maths.
+ */
+function drawEyeCrop(canvas: HTMLCanvasElement, video: HTMLVideoElement, features: FaceFeatures | null): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const cw = canvas.width;
+  const ch = canvas.height;
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, cw, ch);
+
+  const srcW = video.videoWidth;
+  const srcH = video.videoHeight;
+  if (!features || !srcW || !srcH) {
+    ctx.fillStyle = 'rgba(155,172,196,0.7)';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('no eye', cw / 2, ch / 2);
+    ctx.textAlign = 'start';
+    return;
+  }
+
+  // Choose the higher-quality eye for the crop.
+  const useLeft = features.leftEye.quality >= features.rightEye.quality;
+  const earIdx = useLeft ? LEFT_EYE_EAR_IDX : RIGHT_EYE_EAR_IDX;
+  const irisIdx = useLeft ? LEFT_IRIS_IDX : RIGHT_IRIS_IDX;
+  const proxy = useLeft ? features.leftEye.irisProxy : features.rightEye.irisProxy;
+
+  // The normalisation box: the eye-region bounds used by the eye-local signal.
+  const box = landmarkBounds(features.landmarks, earIdx);
+  const boxW = box.maxX - box.minX;
+  const boxH = box.maxY - box.minY;
+  // Context padding around the box for the crop source rectangle.
+  const padX = boxW * 0.6;
+  const padY = boxH * 1.1;
+  let sx0 = (box.minX - padX) * srcW;
+  let sy0 = (box.minY - padY) * srcH;
+  let sw = (boxW + 2 * padX) * srcW;
+  let sh = (boxH + 2 * padY) * srcH;
+  // Clamp the source rectangle into the frame.
+  sx0 = Math.max(0, Math.min(sx0, srcW - 1));
+  sy0 = Math.max(0, Math.min(sy0, srcH - 1));
+  sw = Math.max(1, Math.min(sw, srcW - sx0));
+  sh = Math.max(1, Math.min(sh, srcH - sy0));
+
+  try {
+    ctx.drawImage(video, sx0, sy0, sw, sh, 0, 0, cw, ch);
+  } catch {
+    return; // frame not ready
+  }
+
+  const mapX = (nx: number) => ((nx * srcW - sx0) / sw) * cw;
+  const mapY = (ny: number) => ((ny * srcH - sy0) / sh) * ch;
+
+  // Normalisation box.
+  ctx.strokeStyle = '#9b8cff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(mapX(box.minX), mapY(box.minY), mapX(box.maxX) - mapX(box.minX), mapY(box.maxY) - mapY(box.minY));
+  // Centred origin crosshair (the 0,0 of the −1…1 mapping).
+  const ox = mapX((box.minX + box.maxX) / 2);
+  const oy = mapY((box.minY + box.maxY) / 2);
+  ctx.strokeStyle = 'rgba(155,140,255,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(mapX(box.minX), oy);
+  ctx.lineTo(mapX(box.maxX), oy);
+  ctx.moveTo(ox, mapY(box.minY));
+  ctx.lineTo(ox, mapY(box.maxY));
+  ctx.stroke();
+
+  // Iris ring landmarks and the iris-proxy centre.
+  ctx.fillStyle = '#ffd166';
+  for (const i of irisIdx) {
+    const lm = features.landmarks[i];
+    if (lm) ctx.fillRect(mapX(lm.x) - 1.5, mapY(lm.y) - 1.5, 3, 3);
+  }
+  ctx.fillStyle = '#ff7b54';
+  ctx.beginPath();
+  ctx.arc(mapX(proxy.x), mapY(proxy.y), 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(229,233,240,0.85)';
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.fillText(`${useLeft ? 'left' : 'right'} eye · normalisation box`, 6, ch - 8);
+}
+
+/** Draw a rolling EAR trace with the blink threshold as a reference line. */
+function drawEarTrace(canvas: HTMLCanvasElement, trace: number[]): void {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(0, 0, w, h);
+
+  const EAR_MAX = 0.45;
+  const toY = (ear: number) => h - (Math.min(EAR_MAX, Math.max(0, ear)) / EAR_MAX) * h;
+
+  // Blink threshold line.
+  const ty = toY(EAR_BLINK_THRESHOLD);
+  ctx.strokeStyle = 'rgba(255,180,180,0.9)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(0, ty);
+  ctx.lineTo(w, ty);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,180,180,0.9)';
+  ctx.font = '10px monospace';
+  ctx.fillText(`blink < ${EAR_BLINK_THRESHOLD}`, 6, ty - 4);
+
+  if (trace.length >= 2) {
+    ctx.strokeStyle = '#5be39b';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    trace.forEach((ear, i) => {
+      const x = (i / (trace.length - 1)) * w;
+      const y = toY(ear);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+  }
+}
+
 // --- Provider ---------------------------------------------------------------
 
 function Step2DemoProvider({ children }: { children: ReactNode }) {
@@ -154,6 +292,9 @@ function Step2DemoProvider({ children }: { children: ReactNode }) {
 
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const cropCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const earCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const earTraceRef = useRef<number[]>([]);
   const rafRef = useRef<number | null>(null);
   const rvfcRef = useRef<number | null>(null);
   const runningRef = useRef(false);
@@ -188,6 +329,18 @@ function Step2DemoProvider({ children }: { children: ReactNode }) {
 
     if (canvasRef.current) {
       drawOverlay(canvasRef.current, video, result);
+    }
+    if (cropCanvasRef.current) {
+      drawEyeCrop(cropCanvasRef.current, video, result);
+    }
+    if (result) {
+      const combinedEar = (result.leftEye.ear + result.rightEye.ear) / 2;
+      const trace = earTraceRef.current;
+      trace.push(combinedEar);
+      if (trace.length > EAR_TRACE_MAX) trace.shift();
+    }
+    if (earCanvasRef.current) {
+      drawEarTrace(earCanvasRef.current, earTraceRef.current);
     }
 
     // Throttle React updates to ~10 Hz; the overlay itself draws every frame.
@@ -228,6 +381,7 @@ function Step2DemoProvider({ children }: { children: ReactNode }) {
       store.clear();
       frameCountRef.current = 0;
       lastUiUpdateRef.current = 0;
+      earTraceRef.current = [];
       setFeatures(null);
       setFrameCount(0);
       setState('loading');
@@ -259,6 +413,14 @@ function Step2DemoProvider({ children }: { children: ReactNode }) {
     canvasRef.current = canvas;
   }, []);
 
+  const registerCropCanvas = useCallback((canvas: HTMLCanvasElement | null) => {
+    cropCanvasRef.current = canvas;
+  }, []);
+
+  const registerEarCanvas = useCallback((canvas: HTMLCanvasElement | null) => {
+    earCanvasRef.current = canvas;
+  }, []);
+
   // Release the loop and the extractor when the page unmounts.
   useEffect(
     () => () => {
@@ -278,8 +440,21 @@ function Step2DemoProvider({ children }: { children: ReactNode }) {
       onStreamChange,
       onVideoElement,
       registerCanvas,
+      registerCropCanvas,
+      registerEarCanvas,
     }),
-    [store, features, state, errorMessage, frameCount, onStreamChange, onVideoElement, registerCanvas],
+    [
+      store,
+      features,
+      state,
+      errorMessage,
+      frameCount,
+      onStreamChange,
+      onVideoElement,
+      registerCanvas,
+      registerCropCanvas,
+      registerEarCanvas,
+    ],
   );
 
   return <Step2DemoContext.Provider value={value}>{children}</Step2DemoContext.Provider>;
@@ -298,12 +473,21 @@ function formatNumber(value: number | undefined, digits = 3): string {
 // --- Live demo --------------------------------------------------------------
 
 function Step2LiveDemo() {
-  const { features, state, errorMessage, onStreamChange, onVideoElement, registerCanvas } =
-    useStep2Demo();
+  const {
+    features,
+    state,
+    errorMessage,
+    onStreamChange,
+    onVideoElement,
+    registerCanvas,
+    registerCropCanvas,
+    registerEarCanvas,
+  } = useStep2Demo();
 
   const overlay = (
     <canvas ref={registerCanvas} className="feature-overlay" />
   );
+  const cameraReady = state === 'tracking' || state === 'no-face';
 
   return (
     <div className="feature-demo">
@@ -350,6 +534,40 @@ function Step2LiveDemo() {
           'No face detected — move into frame and ensure your face is well lit. Quality indicators read low until a face is found.'}
         {state === 'error' && (errorMessage ?? 'The face-tracking model could not be loaded.')}
       </p>
+
+      {cameraReady && (
+        <div className="eye-detail">
+          <figure className="eye-detail__item">
+            <canvas
+              ref={registerCropCanvas}
+              width={200}
+              height={150}
+              className="eye-detail__canvas"
+              role="img"
+              aria-label="Zoomed eye-region crop with iris ring, iris-proxy centre, and normalisation box"
+            />
+            <figcaption className="eye-detail__caption">
+              Zoomed eye region. The purple box is the eye-local <strong>normalisation box</strong>:
+              the iris-proxy (orange) is mapped to −1…1 within it — a preview of the Step 4
+              eye-local signal.
+            </figcaption>
+          </figure>
+          <figure className="eye-detail__item">
+            <canvas
+              ref={registerEarCanvas}
+              width={260}
+              height={120}
+              className="eye-detail__canvas"
+              role="img"
+              aria-label="Live eye-aspect-ratio trace with the blink threshold line"
+            />
+            <figcaption className="eye-detail__caption">
+              Live <strong>EAR</strong> (eye-aspect-ratio, combined). Blink and watch the trace dip
+              below the dashed blink threshold — blink detection made observable.
+            </figcaption>
+          </figure>
+        </div>
+      )}
     </div>
   );
 }

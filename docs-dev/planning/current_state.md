@@ -281,3 +281,8 @@ Outstanding items are human-run tasks:
   jitter; details panel reflects live params), and a Step 5 calibration-points dropout
   (9/5/3 → refit via the existing `fitGazeMapping`, RMS rises as points drop; refit invalidates
   prior validation). Demo controls only, no new maths, session model unchanged.
+- `052_eye_region_crop_and_ear_trace.md` — Step 2 visualisation: a zoomed eye-region crop drawn
+  from the live frame with the iris ring, iris-proxy centre, and the eye-local normalisation box
+  overlaid (previews the Step 4 −1…1 mapping), plus a rolling combined-EAR trace with the blink
+  threshold line that dips on a blink. Reuses the feature extractor/geometry; visualisation only,
+  handles no-face gracefully, session model unchanged.
