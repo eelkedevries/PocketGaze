@@ -25,7 +25,22 @@ function heatColour(v: number): string {
   return `hsla(${hue}, 80%, 55%, ${alpha})`;
 }
 
-export default function ScanpathHeatmap({ fixations }: { fixations: Fixation[] }) {
+interface ScanpathHeatmapProps {
+  fixations: Fixation[];
+  /** Input-mode label for the badge; defaults to the Step 6 eye-local source. */
+  inputModeLabel?: string;
+  /** Modifier class for the badge colour; defaults to eye-local. */
+  inputModeClass?: string;
+  /** Short space note shown in the caution caption. */
+  spaceNote?: string;
+}
+
+export default function ScanpathHeatmap({
+  fixations,
+  inputModeLabel = 'eye-local fixations (not validated screen gaze)',
+  inputModeClass = 'demo-input-mode--eye-local',
+  spaceNote = 'This view is in eye-local space, not validated screen gaze',
+}: ScanpathHeatmapProps) {
   const { showDetails } = useImplementationDetails();
   const [showHeatmap, setShowHeatmap] = useState(true);
 
@@ -50,8 +65,8 @@ export default function ScanpathHeatmap({ fixations }: { fixations: Fixation[] }
         >
           {showHeatmap ? 'Hide heatmap' : 'Show heatmap'}
         </button>
-        <span className="demo-input-mode demo-input-mode--eye-local">
-          Input mode: eye-local fixations (not validated screen gaze)
+        <span className={`demo-input-mode ${inputModeClass}`}>
+          Input mode: {inputModeLabel}
         </span>
         <span className="calibration__progress">
           {fixations.length === 0
@@ -127,8 +142,7 @@ export default function ScanpathHeatmap({ fixations }: { fixations: Fixation[] }
       <p className="timing-demo__note">
         <strong>Read with care.</strong> Scanpaths and heatmaps look authoritative, but over coarse,
         low-precision webcam data at a modest sampling rate they are <strong>qualitative</strong>{' '}
-        sketches — easily over-interpreted as precise “attention”. This view is in eye-local space,
-        not validated screen gaze (§6.3).
+        sketches — easily over-interpreted as precise “attention”. {spaceNote} (§6.3).
       </p>
 
       {showDetails && (

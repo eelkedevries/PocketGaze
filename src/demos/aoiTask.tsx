@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
 import { aoiMetrics, type Aoi, type AoiFixation } from '../lib/aoiMetrics';
+import ScanpathHeatmap from './scanpathHeatmap';
 
 // AOI dwell-analysis demo (specification §3.7, §6.2, §6.3, §2.5/§2.6).
 //
@@ -102,6 +103,12 @@ export default function AoiTask() {
   }, []);
 
   const metrics = useMemo(() => aoiMetrics(fixations, AOIS), [fixations]);
+  // Reuse the existing scanpath/heatmap component over the same pointer-driven
+  // fixations (076d): content-space, clearly labelled as a pointer stand-in.
+  const heatmapFixations = useMemo(
+    () => fixations.map((f) => ({ x: f.content_x, y: f.content_y, durationMs: f.durationMs })),
+    [fixations],
+  );
 
   return (
     <div className="aoi">
@@ -243,6 +250,14 @@ export default function AoiTask() {
           </section>
         </div>
       )}
+
+      <h4 className="content-demo__subheading">Scanpath and heatmap of this task</h4>
+      <ScanpathHeatmap
+        fixations={heatmapFixations}
+        inputModeLabel="pointer (simulated gaze), content space"
+        inputModeClass="demo-input-mode--pointer"
+        spaceNote="This view is over a pointer stand-in in content space, not validated screen gaze"
+      />
     </div>
   );
 }
