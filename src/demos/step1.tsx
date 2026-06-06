@@ -10,6 +10,7 @@ import {
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
 import ExportButton from '../components/ExportButton';
+import LatencyBudget from '../components/LatencyBudget';
 import { SamplingRatePanel } from '../components/LimitationPanels';
 import { FrameTimer, type FrameTick } from '../lib/frameTiming';
 import { SessionStore } from '../lib/sessionStore';
@@ -227,6 +228,8 @@ function Step1LiveDemo() {
       )}
 
       {running && tick && <FrameFilmstrip store={store} tick={tick} />}
+
+      {running && <LatencyBudget tick={tick} />}
 
       <SamplingRatePanel />
     </div>
