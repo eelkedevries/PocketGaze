@@ -46,7 +46,7 @@ export const MODEL_NAME = 'mediapipe-face-landmarker';
 export type FaceExtractorState = 'uninitialised' | 'loading' | 'ready' | 'error';
 
 export interface EyeFeatures {
-  /** Iris proxy: centroid of the 5-point iris ring, normalised 0-1. */
+  /** Iris-centre proxy: centroid of the 5-point iris ring, normalised 0-1. */
   irisProxy: Point3;
   /** Raw Eye Aspect Ratio. */
   ear: number;

@@ -84,7 +84,7 @@ export interface EyeLocalFilteredFields {
 
 /**
  * Eye-local SIGNAL (specification §3.4, §4.3 "Eye-local signal", glossary §7.2,
- * Domain rule §6.2): the iris/pupil proxy normalised WITHIN each detected eye
+ * Domain rule §6.2): the iris-centre proxy normalised WITHIN each detected eye
  * region. Calibration-light and available when eye-region and iris detection
  * succeed with sufficient quality — but **not** screen gaze.
  *

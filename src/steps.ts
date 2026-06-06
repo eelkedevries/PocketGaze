@@ -87,6 +87,71 @@ export const steps: StepDefinition[] = [
         definition:
           'A screen-gaze point translated into the content’s own coordinates, accounting for scrolling, zooming, and changes in layout.',
       },
+      {
+        term: 'Iris-centre proxy',
+        definition:
+          'The centre of the iris ring, estimated from landmarks and used as a proxy for the pupil centre. It is the raw 2-D point from which the eye-local signal is derived.',
+      },
+      {
+        term: 'Fixation',
+        definition:
+          'A period during which gaze stays roughly still on one location, so visual information can be taken in.',
+      },
+      {
+        term: 'Saccade',
+        definition:
+          'A fast ballistic jump of the eyes between fixations. At ~30 Hz its fine timing and peak velocity cannot be recovered.',
+      },
+      {
+        term: 'Candidate fixation / candidate saccade',
+        definition:
+          'Fixations and saccades are labelled cautiously as candidates here, because the low frame rate and noise mean they cannot be confirmed to research-grade standards.',
+      },
+      {
+        term: 'Calibration',
+        definition:
+          'Fitting a user-specific mapping from the eye-local feature to screen coordinates, using samples collected at known on-screen targets.',
+      },
+      {
+        term: 'Validation error',
+        definition:
+          'The error of the fitted mapping measured on held-out targets that were not used for fitting — the honest test of on-screen accuracy, reported as accuracy and precision.',
+      },
+      {
+        term: 'I-VT (velocity-threshold) rule',
+        definition:
+          'An event-detection rule that classifies samples as saccades when point-to-point velocity exceeds a threshold, and as fixations otherwise.',
+      },
+      {
+        term: 'I-DT (dispersion-threshold) rule',
+        definition:
+          'An event-detection rule that marks a fixation when consecutive samples stay within a small spatial dispersion for a minimum duration. This site’s detector combines I-VT and I-DT.',
+      },
+      {
+        term: 'One Euro filter',
+        definition:
+          'An adaptive low-pass filter that smooths slow movement strongly while letting fast movement through, trading latency against jitter (controlled by its minimum-cutoff and beta parameters).',
+      },
+      {
+        term: 'rVFC (requestVideoFrameCallback)',
+        definition:
+          'A browser API that delivers a callback per decoded video frame with its media timestamp, giving accurate frame timing where available (with requestAnimationFrame as a fallback).',
+      },
+      {
+        term: 'Tracking subtypes',
+        definition:
+          'Three distinct things are tracked, and are named separately rather than as a single “tracking”: face tracking (locating the face and landmarks), eye-region tracking (isolating each eye and its iris-centre proxy), and gaze estimation (mapping the eye-local feature to a screen-gaze estimate).',
+      },
+      {
+        term: 'Quality subtypes',
+        definition:
+          'Quality is reported per concern rather than as a single “quality”: detection quality (landmark/face confidence), signal quality (eye-local stability), calibration quality (fit consistency), validation quality (held-out error), and event confidence (how trustworthy a candidate event is).',
+      },
+      {
+        term: 'Candidate event labels',
+        definition:
+          'The exact event values used in the data: fixation_candidate, saccade_candidate, saccade_head_still, saccade_during_head_movement, uncertain_head_motion, blink, tracking_lost, and smooth_pursuit_candidate.',
+      },
     ],
     methods: [
       'Treat smartphone eye tracking as a pipeline of seven stages, not a single model.',
@@ -100,7 +165,7 @@ export const steps: StepDefinition[] = [
     noLiveDemo: true,
     pipelineStages: [
       { label: 'Step 1', title: 'Capture and timing', summary: 'Timestamped frames from the front camera.' },
-      { label: 'Step 2', title: 'Face and eye features', summary: 'Landmarks, eye regions, an iris proxy, and blink state.' },
+      { label: 'Step 2', title: 'Face and eye features', summary: 'Landmarks, eye regions, an iris-centre proxy, and blink state.' },
       { label: 'Step 3', title: 'Head and phone motion', summary: 'Head pose and motion-quality labels.' },
       { label: 'Step 4', title: 'Eye-local and gaze signals', summary: 'Eye-local movement and, optionally, a screen-gaze estimate.' },
       { label: 'Step 5', title: 'Calibration and personalisation', summary: 'A user-specific mapping to screen coordinates.' },
@@ -167,16 +232,16 @@ export const steps: StepDefinition[] = [
         'EAR = (‖p₂−p₆‖ + ‖p₃−p₅‖) / (2·‖p₁−p₄‖) over the six eye-contour points. Openness = clamp((EAR − 0.15) / (0.35 − 0.15), 0, 1); the eye is treated as closed/blinking below EAR ≈ 0.2. The iris-proxy centre is the mean of the five iris-ring landmark coordinates.',
     },
     intro:
-      'Raw camera frames tell you very little on their own. Step 2 applies a face-landmark model to locate the face, isolate each eye region, estimate where the iris or pupil proxy sits within that region, assess whether each eyelid is open or closed, and score the quality of what was detected. These features are the raw material for every downstream step: head pose needs the face geometry, the eye-local signal needs the iris proxy within its eye region, blink suppression needs the eyelid-openness values, and calibrated gaze mapping needs good-quality detections to be worth fitting.',
+      'Raw camera frames tell you very little on their own. Step 2 applies a face-landmark model to locate the face, isolate each eye region, estimate where the iris-centre proxy sits within that region, assess whether each eyelid is open or closed, and score the quality of what was detected. These features are the raw material for every downstream step: head pose needs the face geometry, the eye-local signal needs the iris-centre proxy within its eye region, blink suppression needs the eyelid-openness values, and calibrated gaze mapping needs good-quality detections to be worth fitting.',
     methods: [
       'Face landmark detection: run a face-mesh or sparse-landmark model on each camera frame to locate the face and a set of key points covering the eye regions, brow, nose bridge, and outer face contour.',
       'Eye-region isolation: use the landmark set to crop or define a bounding region around each eye separately, normalised for the face scale and orientation, so that the iris proxy can be measured consistently regardless of how close the phone is held.',
-      'Iris and pupil-proxy extraction: within each eye region, estimate the centre of the iris or the brightest/darkest circular region as a proxy for the pupil; the result is a 2-D position within the eye region that the next steps will use as the raw eye-movement signal.',
+      'Iris-centre proxy extraction: within each eye region, estimate the centre of the iris ring as a stable proxy for the pupil centre; the result is a 2-D position within the eye region that the next steps will use as the raw eye-movement signal.',
       'Eyelid-openness estimation: derive an eye-aspect ratio or equivalent metric from the upper and lower lid landmarks to indicate whether each eye is open, partially open, or closed; this drives blink detection and quality filtering in Step 6.',
       'Per-eye quality estimation: combine landmark confidence, eye-region size, and openness into a per-eye quality score that later steps use to weight or reject samples.',
     ],
     implementationOnThisPage:
-      'The live demo for this step is a camera preview with a real-time overlay of detected landmarks, eye-region boundaries, and the iris proxy, together with per-eye open/closed and quality indicators.',
+      'The live demo for this step is a camera preview with a real-time overlay of detected landmarks, eye-region boundaries, and the iris-centre proxy, together with per-eye open/closed and quality indicators.',
     outputs: [
       'Face, eye, eyelid, and iris/pupil-proxy features per frame.',
       'Per-eye quality scores (left_eye_quality, right_eye_quality) and an overall face_quality field.',
@@ -185,7 +250,7 @@ export const steps: StepDefinition[] = [
     limitations: [
       'Landmark quality degrades with partial occlusion (hand, glasses, hair), unconventional eyewear, extreme yaw or pitch, strong side-lighting, or very low light.',
       'Unstable or noisy landmark detections propagate to every downstream step: poor iris localisation produces noisy eye-local signals, and poor face geometry produces unreliable head-pose estimates.',
-      'The iris proxy is a geometric estimate from visible landmarks, not a direct measurement of the pupil centre; accuracy varies with iris visibility and model choice.',
+      'The iris-centre proxy is a geometric estimate from visible landmarks, not a direct measurement of the pupil centre; accuracy varies with iris visibility and model choice.',
       'Running inference on every frame is computationally expensive; on mid-range phones, the chosen model must balance accuracy against thermal and battery impact.',
     ],
   },
@@ -230,14 +295,14 @@ export const steps: StepDefinition[] = [
     title: 'Step 4: Eye-local and gaze signals',
     disclosure: {
       mechanism:
-        'The iris proxy is normalised within each detected eye region to give the eye-local signal — calibration-light and available whenever eye-region and iris detection succeed with sufficient quality, but not screen gaze. A separate, calibrated regression (or an opt-in model) maps the eye-local feature vector to a screen-gaze estimate; the two signal kinds are kept in distinct fields and never conflated.',
+        'The iris-centre proxy is normalised within each detected eye region to give the eye-local signal — calibration-light and available whenever eye-region and iris detection succeed with sufficient quality, but not screen gaze. A separate, calibrated regression (or an opt-in model) maps the eye-local feature vector to a screen-gaze estimate; the two signal kinds are kept in distinct fields and never conflated.',
       maths:
         'Eye-local coordinate = (iris − regionCentre) / regionHalfSize ∈ [−1, 1] per axis. Screen gaze = C · [1, cₓ, c_y, lₓ, l_y, rₓ, r_y]ᵀ, where the feature vector holds the combined and per-eye eye-local coordinates and C is the fitted coefficient matrix (Step 5).',
     },
     intro:
       'With face geometry and head pose available, Step 4 produces the main signal of interest. Two quite different signals are possible, and keeping them apart is one of the central design rules of PocketGaze. An eye-local signal measures where the iris proxy sits within the eye region — it reflects eye rotation relative to the head, is calibration-light, and is always available, but it is not the same as where you are looking on the screen. A screen-gaze estimate goes further: it maps the eye-local signal through a calibrated or trained model to give an estimated on-screen x/y position. Screen-gaze requires calibration, validation, and reliability checks before it can be used meaningfully; without those, it is too coarse for fine spatial interpretation.',
     methods: [
-      'Eye-local signal estimation: normalise the iris-proxy position within the detected eye region (accounting for face scale and head orientation) to produce a calibration-light left/right/combined eye-local coordinate. This is the baseline signal — available only when eye-region and iris detection succeed with sufficient quality, but not screen gaze.',
+      'Eye-local signal estimation: normalise the iris-centre proxy position within the detected eye region (accounting for face scale and head orientation) to produce a calibration-light left/right/combined eye-local coordinate. This is the baseline signal — available only when eye-region and iris detection succeed with sufficient quality, but not screen gaze.',
       'Screen-gaze estimation via regression mapping: after a calibration step (Step 5), fit a mapping from eye-local features to known screen positions, then apply it to new frames to estimate where on the screen the user is looking.',
       'Model-based screen-gaze inference: use a pre-trained gaze model (such as WebEyeTrack, if available after a technical spike, or WebGazer as a fallback baseline) that takes the face or eye region as input and outputs screen-gaze coordinates directly.',
       'Signal availability and confidence: report whether a screen-gaze estimate is available for each sample and attach a confidence score; the eye-local signal is available as a fallback whenever eye-region and iris detection succeed, even when screen-gaze is not.',

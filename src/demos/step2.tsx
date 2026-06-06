@@ -23,7 +23,7 @@ import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
 
 // Step 2 live demo: a camera preview with a live overlay of face landmarks,
-// per-eye regions, and the iris/pupil proxy as the main demo, plus feature
+// per-eye regions, and the iris-centre proxy as the main demo, plus feature
 // subprocess panels revealed by the master control (specification §3.2, §2.5,
 // §2.6).
 //
