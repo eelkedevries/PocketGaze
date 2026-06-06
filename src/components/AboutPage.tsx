@@ -1,6 +1,7 @@
 import { OutOfReachPanel } from './LimitationPanels';
 import MethodComparisonTable from './MethodComparisonTable';
 import DeviceBenchmarkTable from './DeviceBenchmarkTable';
+import ExportInspector from './ExportInspector';
 
 export default function AboutPage() {
   return (
@@ -30,18 +31,24 @@ export default function AboutPage() {
         <p>
           When the step demos are active, all processing happens locally on your device.
           Camera frames are analysed in the browser and are never sent to a remote server.
-          Raw video is not stored or uploaded by default; if a data-export feature is added
-          in a later step, it will export only derived data — signals, events, and task
-          metadata — not the video itself, and only when you choose to trigger it.
+          Raw video is not stored or uploaded; the export feature produces only derived data —
+          signals, events, and task metadata — not the video itself, and only when you choose to
+          trigger it. Processing on-device, by default, is the privacy design of this project:
+          the sensitive raw imagery never leaves the page.
         </p>
         <p>
-          Landmarks, gaze estimates, head-pose values, and any task-linked eye data are
-          treated as sensitive, even though all computation stays on your device. The
-          camera is requested only when a step's demo requires it, with a clear
-          permission-and-consent flow, and the stream is released as soon as the demo
-          stops.
+          Derived gaze data is sensitive even though all computation stays on your device. Where
+          someone looks, and for how long, can reveal <strong>reading behaviour, attention,
+          interest, cognitive strategy, and fatigue</strong> — so gaze estimates, content-mapped
+          coordinates, candidate events, landmarks, and head-pose values are all treated as
+          sensitive personal data, not neutral telemetry. The camera is requested only when a
+          step’s demo requires it, with a clear permission-and-consent flow, and the stream is
+          released as soon as the demo stops. In a real study, informed consent covering what is
+          recorded, why, and for how long would be essential.
         </p>
       </section>
+
+      <ExportInspector />
 
       <section className="step-section">
         <h2>What this site does not do</h2>
