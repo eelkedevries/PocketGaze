@@ -119,7 +119,11 @@ export default function AoiTask() {
           Input mode: pointer (simulated gaze)
         </span>
         <span className="calibration__progress" aria-live="polite">
-          {currentAoiId ? `Looking at: ${currentAoiId}` : 'Hover an area of interest.'}
+          {currentAoiId
+            ? `Looking at: ${currentAoiId} (dwell ${Math.round(
+                metrics.perAoi.find((r) => r.id === currentAoiId)?.dwellMs ?? 0,
+              )} ms)`
+            : 'Hover an area of interest.'}
         </span>
       </div>
 
