@@ -25,6 +25,7 @@ import { meanDegreesPerNormalised } from '../lib/visualAngle';
 import type { Fixation } from '../lib/fixationAggregation';
 import ScanpathHeatmap from './scanpathHeatmap';
 import { SessionStore } from '../lib/sessionStore';
+import ExportButton from '../components/ExportButton';
 import type { StepDemo } from './registry';
 
 // Step 6 live demo: wire One Euro filtering (024), blink/quality suppression
@@ -735,7 +736,7 @@ function Step6LiveDemo() {
 // --- Subprocess panels -------------------------------------------------------
 
 function Step6DetailsPanels() {
-  const { state, recentEvents, filterParams, velocitySamples } = useStep6Demo();
+  const { state, recentEvents, filterParams, velocitySamples, store } = useStep6Demo();
   const running = state === 'tracking' || state === 'no-face';
   const p = { ...DEFAULT_ONE_EURO_PARAMS, ...filterParams };
   const s = DEFAULT_SUPPRESSION_THRESHOLDS;
@@ -751,6 +752,14 @@ function Step6DetailsPanels() {
 
   return (
     <div className="panels">
+      <section className="panel">
+        <h3 className="panel__title">Export session data</h3>
+        <p className="panel__note">
+          Download this step’s accumulated rows (samples, candidate events, and quality) as a
+          single CSV. Derived signals only — never raw frames or landmarks. Nothing is uploaded.
+        </p>
+        <ExportButton store={store} />
+      </section>
       <section className="panel">
         <h3 className="panel__title">Velocity vs the saccade threshold</h3>
         <VelocityTrace

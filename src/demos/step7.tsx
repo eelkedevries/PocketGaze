@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { ContentMapper, type ContentRect } from '../lib/contentCoordinates';
 import AoiTask from './aoiTask';
+import ExportButton from '../components/ExportButton';
 import { StimulusLogger } from '../lib/stimulusLog';
 import { SessionStore } from '../lib/sessionStore';
 import type { ContentMappedFields, StimulusRow } from '../types/session';
@@ -353,7 +354,7 @@ function Step7LiveDemo() {
 // --- Subprocess panels ------------------------------------------------------
 
 function Step7DetailsPanels() {
-  const { viewport, containerRect, scroll, transformLog, stimulusRows, content, targetScreen } =
+  const { viewport, containerRect, scroll, transformLog, stimulusRows, content, targetScreen, store } =
     useStep7Demo();
 
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
@@ -361,6 +362,14 @@ function Step7DetailsPanels() {
 
   return (
     <div className="panels">
+      <section className="panel">
+        <h3 className="panel__title">Export session data</h3>
+        <p className="panel__note">
+          Download this step’s accumulated rows (stimulus and content-mapped coordinates) as a
+          single CSV. Derived data only — never raw frames or landmarks. Nothing is uploaded.
+        </p>
+        <ExportButton store={store} />
+      </section>
       <section className="panel">
         <h3 className="panel__title">Viewport / DPR / orientation</h3>
         <ul className="panel__list">

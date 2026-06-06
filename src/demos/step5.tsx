@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
+import ExportButton from '../components/ExportButton';
 import CalibrationTask from './calibrationTask';
 import ValidationTask from './validationTask';
 import PursuitTask from './pursuitTask';
@@ -696,7 +697,7 @@ function ValidationErrorMap({ validation }: { validation: ValidationResult }) {
 // --- Subprocess panels ------------------------------------------------------
 
 function Step5DetailsPanels() {
-  const { result, samples, validation } = useStep5Demo();
+  const { result, samples, validation, store } = useStep5Demo();
 
   if (!result) {
     return (
@@ -713,6 +714,14 @@ function Step5DetailsPanels() {
 
   return (
     <div className="panels">
+      <section className="panel">
+        <h3 className="panel__title">Export session data</h3>
+        <p className="panel__note">
+          Download this step’s accumulated rows (calibration samples and validation quality) as a
+          single CSV. Derived data only — never raw frames or landmarks. Nothing is uploaded.
+        </p>
+        <ExportButton store={store} />
+      </section>
       {validation && (
         <section className="panel">
           <h3 className="panel__title">Validation: per-target accuracy / precision</h3>

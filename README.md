@@ -42,11 +42,13 @@ the optional implementation/subprocess panels on each step page.
 
 ### Data export
 
-After running any demo that accumulates session data, the **Export session data** panel
-(Step 1 → Show implementation details) downloads a CSV file of all accumulated rows:
-sample, event, calibration, stimulus, and quality rows in a single combined file, with
-raw and filtered signals in separate columns and blank (not zero) for non-applicable
-fields. Nothing is uploaded; the download is entirely local.
+Each step that accumulates session data exposes an **Export session data** panel under
+the master *Show implementation details* control (Steps 1, 5, 6, and 7). It downloads a
+CSV of that step’s accumulated rows — sample, event, calibration, stimulus, and quality
+rows in a single combined file — with raw and filtered signals in separate columns and
+blank (not zero) for non-applicable fields. Only derived data is exported; raw video
+frames and raw landmarks are never included. Nothing is uploaded; the download is
+entirely local.
 
 ## Tech stack
 
