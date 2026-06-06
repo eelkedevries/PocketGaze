@@ -10,7 +10,7 @@ navigation provides one page per step:
 - Step 0: Overview
 - Step 1: Capture and timing
 - Step 2: Face and eye features
-- Step 3: Head and phone motion
+- Step 3: Head pose and motion quality
 - Step 4: Eye-local and gaze signals
 - Step 5: Calibration and personalisation
 - Step 6: Filtering and events

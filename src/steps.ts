@@ -166,7 +166,7 @@ export const steps: StepDefinition[] = [
     pipelineStages: [
       { label: 'Step 1', title: 'Capture and timing', summary: 'Timestamped frames from the front camera.' },
       { label: 'Step 2', title: 'Face and eye features', summary: 'Landmarks, eye regions, an iris-centre proxy, and blink state.' },
-      { label: 'Step 3', title: 'Head and phone motion', summary: 'Head pose and motion-quality labels.' },
+      { label: 'Step 3', title: 'Head pose and motion quality', summary: 'Head pose and motion-quality labels.' },
       { label: 'Step 4', title: 'Eye-local and gaze signals', summary: 'Eye-local movement and, optionally, a screen-gaze estimate.' },
       { label: 'Step 5', title: 'Calibration and personalisation', summary: 'A user-specific mapping to screen coordinates.' },
       { label: 'Step 6', title: 'Filtering and events', summary: 'Cleaned traces and cautious candidate events.' },
@@ -243,7 +243,7 @@ export const steps: StepDefinition[] = [
     implementationOnThisPage:
       'The live demo for this step is a camera preview with a real-time overlay of detected landmarks, eye-region boundaries, and the iris-centre proxy, together with per-eye open/closed and quality indicators.',
     outputs: [
-      'Face, eye, eyelid, and iris/pupil-proxy features per frame.',
+      'Face, eye, eyelid, and iris-centre proxy features per frame.',
       'Per-eye quality scores (left_eye_quality, right_eye_quality) and an overall face_quality field.',
       'Blink and eye-state fields (left_eye_open, right_eye_open, blink_state) used by filtering and event detection.',
     ],
@@ -258,7 +258,7 @@ export const steps: StepDefinition[] = [
     index: 3,
     slug: 'step-3',
     navLabel: 'Step 3',
-    title: 'Step 3: Head and phone motion',
+    title: 'Step 3: Head pose and motion quality',
     disclosure: {
       mechanism:
         'The facial transformation matrix produced alongside the landmarks is decomposed into head rotation (yaw, pitch, roll) and an approximate translation. Rotational speed and a pose-quality proxy then label each sample low / moderate / uncertain, so head-motion-contaminated intervals can be excluded downstream rather than mistaken for eye movement.',
@@ -266,7 +266,7 @@ export const steps: StepDefinition[] = [
         'For a rotation R = Rz·Ry·Rx: pitch = atan2(r₂₁, r₂₂), yaw = atan2(−r₂₀, √(r₀₀² + r₁₀²)), roll = atan2(r₁₀, r₀₀) (a Tait–Bryan/Euler decomposition; atan2 keeps it numerically stable across the full ±180° range, but the decomposition itself still degenerates at the gimbal-lock singularity near ±90° of the middle axis, where yaw and roll are no longer separable — in practice the face is lost before that pose is reached). Monocular translation — especially depth — is unscaled and approximate.',
     },
     intro:
-      'A camera attached to a phone that moves in 3-D space cannot tell the difference between the eye moving and the head rotating or translating — both change where the iris appears in the frame. Step 3 estimates the head\'s orientation and position from the face geometry, attaches a motion-quality label to each sample, and flags intervals where head or phone movement makes the eye-movement signal too unreliable to use. Without this step, head and phone motion is silently misclassified as eye movement, corrupting the signal with artefacts that look like large, rapid gaze shifts.',
+      'A camera attached to a phone that moves in 3-D space cannot tell the difference between the eye moving and the head rotating or translating — both change where the iris appears in the frame. Step 3 estimates the head\'s orientation and position from the face geometry, attaches a motion-quality label to each sample, and flags intervals where head or phone movement makes the eye-movement signal too unreliable to use. Without this step, head and phone motion is silently misclassified as eye movement, corrupting the signal with artefacts that look like large, rapid gaze shifts. Head pose here serves quality labelling and the exclusion of contaminated intervals, and feeds the optional head-motion compensation in Step 4 — it is not a metric 3-D position measurement, and from a single camera the translation (especially depth) is approximate and scale-ambiguous.',
     methods: [
       'Head rotation estimation (yaw, pitch, roll): fit a 3-D pose to the 2-D face landmark positions — using a PnP-style solve, Procrustes normalisation, or the pose output of the landmark model — to derive the three rotation angles describing the orientation of the head relative to the camera.',
       'Head translation estimation: derive the approximate 3-D position of the head (tx, ty, tz) from the same geometric fit, giving a coarse measure of how far the face is from the camera and how it has shifted laterally.',
