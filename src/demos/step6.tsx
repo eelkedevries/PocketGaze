@@ -26,6 +26,7 @@ import type { Fixation } from '../lib/fixationAggregation';
 import ScanpathHeatmap from './scanpathHeatmap';
 import { SessionStore } from '../lib/sessionStore';
 import ExportButton from '../components/ExportButton';
+import EventDetectionLab from '../components/EventDetectionLab';
 import type { StepDemo } from './registry';
 
 // Step 6 live demo: wire One Euro filtering (024), blink/quality suppression
@@ -729,6 +730,8 @@ function Step6LiveDemo() {
           <ScanpathHeatmap fixations={fixations} />
         </>
       )}
+
+      <EventDetectionLab />
     </div>
   );
 }

@@ -1304,6 +1304,51 @@ body {
   font-size: 0.85rem;
 }
 
+/* Event-detection lab (074a/074b). */
+.evlab {
+  margin-top: 1rem;
+}
+
+.evlab__intro,
+.evlab__legend {
+  font-size: 0.88rem;
+  color: var(--colour-muted);
+}
+
+.evlab__controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.5rem 0.9rem;
+  margin: 0.6rem 0;
+}
+
+.evlab__controls label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  gap: 0.2rem;
+}
+
+.evlab__swatch {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.evlab__swatch--fix {
+  background: #46c08b;
+}
+
+.evlab__swatch--sac {
+  background: #4c9aff;
+}
+
+.evlab__swatch--blink {
+  background: #e5707e;
+}
+
 /* Live latency budget (073b). */
 .latency-budget {
   margin-top: 1rem;
