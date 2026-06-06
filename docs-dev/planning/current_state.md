@@ -18,7 +18,7 @@ gap is work still to be done.
   implementation/subprocess area, outputs, limitations.
 - **Master "Show implementation details" control** — a single site-wide toggle in the
   header (React context) that reveals or hides the optional implementation/subprocess
-  placeholder panels on each step page. The setting persists in `localStorage`
+  panels on each step page. The setting persists in `localStorage`
   (default off).
 - **About/Privacy page** — a standalone static page (`/about`, linked from the footer)
   stating the portfolio intent and the privacy-by-default posture (browser-local
@@ -29,8 +29,8 @@ gap is work still to be done.
   filtered signals as separate fields and blank (optional) distinct from a real `0`. An
   in-memory `SessionStore` (`src/lib/sessionStore.ts`) accumulates typed rows and owns the
   session-relative `time_ms` clock; later capture/tracking modules write to it rather than
-  inventing their own shapes. Export (prompt 031) will serialise this store. Unit-tested
-  with `node --test` (`npm run test`).
+  inventing their own shapes. Export (`031`) serialises this store and is surfaced on
+  Steps 1, 5, 6, and 7 (`063`). Unit-tested with `node --test` (`npm run test`).
 - **Validation (held-out accuracy/precision)** — a pure metrics library
   (`src/lib/validationMetrics.ts`, `034`) computing the field-standard data-quality
   metrics (accuracy, RMS-S2S precision, BCEA) in normalised units, unit-tested with
@@ -74,11 +74,16 @@ The original implementation queue (`004`–`033`) is **complete**: all step demo
 the pipeline runs end-to-end in the browser. A follow-on queue (`034`–`056`,
 `docs-dev/agent/prompts/000_index_new_prompts.md`) adds validation, visual-angle units,
 eye-movement completeness, honesty/context panels, and explanatory interactions; it is
-**complete** (`034`–`056` all run). These prompts are self-contained and record additive
-schema changes in their own `Data contracts touched` sections rather than amending the
-specification; the spec (v1.6) is **not** yet reconciled — additive fields (`viewing_distance_mm`,
-`deg_per_norm_x/y`, `angular_scale_is_estimate`, `head_*_mm`; quality-row validation fields) and
-the new `smooth_pursuit_candidate` event value are flagged here pending a spec update if adopted.
+**complete** (`034`–`056` all run). A further revision-7 batch (`057`–`078`,
+`docs-dev/agent/prompts/000b_index_revision7.md`) then reconciled correctness, terminology,
+validity framing, robustness/ethics, and educational extensions — also **complete** (see the
+"Revision-7 reconciliation" section below; `065b` was correctly skipped).
+
+The specification has now been **reconciled to v1.7**: the additive fields (`viewing_distance_mm`,
+`deg_per_norm_x/y`, `angular_scale_is_estimate`, `head_*_mm`; validation `target_nx/ny` +
+`task_phase`) and the `smooth_pursuit_candidate` event value are folded into §4.3/§5, and the
+Step 3 rename and the ridge-regularised linear-mapping label are recorded. Genuine open design
+questions remain listed in spec §9, not resolved unilaterally.
 
 Outstanding items are human-run tasks:
 
@@ -309,3 +314,47 @@ Outstanding items are human-run tasks:
   always-visible concept; mechanism is a local `<details>` expander; the maths tier appears only
   with the master control (no second global toggle). §2.6 section order preserved; expanders are
   native, keyboard-accessible. Content/model addition only.
+
+## Revision-7 reconciliation (prompts 057–078)
+
+External-driver batch folded into the numbered queue. Audit-first: `057` recorded verified
+ground truth in `docs-dev/reviews/current-state-audit.md`, and every later prompt anchored to it.
+
+**Correction to the `033` record.** The `033` entry above states it "removed all
+scaffold/placeholder wording". That was inaccurate: `src/steps.ts` still carried the scaffold
+file-comment, Step 0 scaffold `limitations`/`detailsContent`, and seven "not yet implemented"
+`implementationOnThisPage` strings (plus stale footer/About copy). These were actually removed in
+`058`. Treat `058`, not `033`, as the point at which the step copy became final.
+
+- **Correctness (`058`–`061`):** scaffold copy removed and the three public surfaces aligned to
+  the verified implementation (`058`); specialist wording fixed — Nyquist vs sampling, main-sequence
+  framing, gimbal-lock, the rank-deficiency note, the "always available" qualifier, and the Step 2
+  per-eye mirroring convention (`059`); terminology standardised to **iris-centre proxy** with the
+  Step 0 glossary extended in place (`060`); **Step 3 renamed to "Head pose and motion quality"**
+  with its role stated and no metric-translation claim (`061`).
+- **Calibration label:** confirmed and recorded as a **ridge-regularised linear (affine)
+  least-squares** fit (not polynomial) across copy, README, and `docs/usage.md` (`059`).
+- **Surfacing (`062`–`063`):** explicit per-demo input-mode indicators; CSV export now reachable on
+  every data-producing step (1, 5, 6, 7), not Step 1 only.
+- **Validity framing (`064`–`067`):** Step 0 signal-taxonomy claims table with an explicit "does not
+  support" column; Step 5 gained a usable/marginal/poor held-out-validation verdict and a
+  recalibration prompt; a shared coordinate-chain figure on Steps 0/4/5/7; the accuracy comparison
+  reconciled to a **qualitative** contrast (unsourced dva figures removed). `065b` (minimal
+  validation) was **skipped** — validation already existed.
+- **Robustness & ethics (`068`–`071`):** Step 2 illumination/failure-mode panel; an About-page
+  device-benchmark **template** (all performance cells "not yet measured") with a live capability
+  readout; extended privacy passage + export inspector (default export excludes raw frames and raw
+  landmarks — never exported); actionable low-frame-rate and unstable-landmark warnings, with drift
+  and unstable-event detection left as non-blocking TODOs.
+- **Educational extensions (`073a`–`077`):** synthetic multi-rate sampling replay and a live latency
+  budget on Step 1; a synthetic-trace event-detection lab on Step 6 driving the real `detectEvents`,
+  with a true-vs-detected comparison (false positives, misses, timing error); a calibration-drift
+  check on Step 5 (gated on real validation); the Step 7 applied-AOI suite (dwell, reading passage,
+  visual search, heatmap, dwell-click) on a shared `useAoiVisits` hook; and an About-page references
+  section.
+- **New modules:** `src/lib/syntheticTrace.ts`; `src/demos/useAoiVisits.ts`,
+  `readingPassageTask.tsx`, `visualSearchTask.tsx`, `dwellClickTask.tsx`; `src/components/`
+  `CoordinateChainFigure`, `DeviceBenchmarkTable`, `ExportInspector`, `ResourcesSection`,
+  `SamplingRateReplay`, `LatencyBudget`, `EventDetectionLab`. Notes:
+  `docs-dev/reviews/current-state-audit.md`, `docs-dev/reviews/phase4-readiness.md`.
+- **Schema:** unchanged — no session/CSV columns were added or renamed in this batch.

@@ -1,8 +1,19 @@
 # Specification
 
-**Version:** 1.6 · **Last updated:** 2026-06-03
+**Version:** 1.7 · **Last updated:** 2026-06-06
 
-**Changelog:** 1.6 — implemented the WebEyeTrack screen-gaze provider (`019b`) and recorded a
+**Changelog:** 1.7 — **reconciled the spec with the implemented code after the revision-7 batch
+(`057`–`078`).** Folded the previously-deferred additive fields into §4.3 — the visual-angle
+estimate group (`viewing_distance_mm`, `deg_per_norm_x/y`, `angular_scale_is_estimate`), the
+approximate head-pose mm fields (`head_tx_mm/ty_mm/tz_mm`), and the validation normalised-target
+fields (`target_nx/ny`; validation uses `quality` rows tagged `task_phase: 'validation'`) — and
+added the `smooth_pursuit_candidate` event value to §5. Recorded the Phase-1 labelling decisions:
+**Step 3 renamed to "Head pose and motion quality"** (§3.3; head pose serves quality labelling,
+exclusion, and Step 4 compensation, not metric 3-D position), and the calibration mapping
+documented as a **ridge-regularised linear (affine) least-squares** fit, not polynomial (§3.5).
+Terminology standardised to **iris-centre proxy**. These changes record what the code already does;
+no binding decision was newly created. Remaining genuine design questions are unchanged and listed
+in §9 (primary feature library status, export file format/field names, control persistence). 1.6 — implemented the WebEyeTrack screen-gaze provider (`019b`) and recorded a
 **documented self-hosting exception** (§2.7): inspection of `webeyetrack@0.0.2` confirmed it
 hardcodes non-overridable runtime CDN fetches for its MediaPipe model/WASM and does not bundle
 its BlazeGaze weights, so it cannot be self-hosted without forking. The opt-in provider B is
@@ -252,7 +263,7 @@ stated here. Specific libraries are candidates until locked in §7.
 - **Limitations:** landmark quality degrades with occlusion, glasses, lighting, extreme
   pose; unstable landmarks propagate downstream.
 
-### 3.3 Step 3 — Head and phone motion
+### 3.3 Step 3 — Head pose and motion quality
 
 - **Goal:** distinguish apparent eye movement caused by real eye movement vs head movement
   vs changing face–camera geometry.
@@ -291,7 +302,10 @@ stated here. Specific libraries are candidates until locked in §7.
 - **Goal:** adapt the signal/mapping to the user, phone, camera position, screen geometry,
   and posture.
 - **Methods to explain:** follow-the-dots calibration; tap/click calibration; regression
-  mapping; model personalisation; calibration-quality checks.
+  mapping; model personalisation; calibration-quality checks. The **implemented** mapping is a
+  **ridge-regularised linear (affine) least-squares** fit (not polynomial); ridge is required
+  because the combined-eye feature columns are exact averages of the per-eye columns, making the
+  design matrix rank-deficient.
 - **Live demo:** a **follow-the-dots** task at known screen positions, then a fitted
   mapping and a simple validation/error readout.
 - **Implementation details panels:** calibration samples (target vs estimate); the fitted
@@ -375,11 +389,12 @@ format become binding when export is implemented (Phase I) and recorded here.
 | Eye-local signal | `left_eye_x/y`, `right_eye_x/y`, `combined_eye_x/y` |
 | Screen-gaze signal | `gaze_x`, `gaze_y`, `gaze_available`, `gaze_confidence` |
 | Content-mapped signal | `content_x`, `content_y`, `content_mapping_available` |
-| Head pose | `head_yaw/pitch/roll`, `head_tx/ty/tz` |
+| Head pose | `head_yaw/pitch/roll`, `head_tx/ty/tz`; approximate mm estimates `head_tx_mm/ty_mm/tz_mm` |
+| Visual-angle estimate | `viewing_distance_mm`, `deg_per_norm_x`, `deg_per_norm_y`, `angular_scale_is_estimate` (estimate only — §3.3, §6.3) |
 | Tracking quality | `left/right_eye_quality`, `face_quality`, `head_pose_quality`, `selected_signal_quality` |
 | Blink / eye state | `left_eye_open`, `right_eye_open`, `blink_state` |
 | Events | `event_type`, `event_start_ms`, `event_end_ms`, `event_confidence`, `head_motion_label` |
-| Task / stimulus | `target_x`, `target_y`, `target_id`, `task_phase` |
+| Task / stimulus | `target_x`, `target_y`, `target_nx`, `target_ny`, `target_id`, `task_phase` (validation uses `quality` rows tagged `task_phase: 'validation'`) |
 | Processing / data flow | `pipeline_id`, `model_name`, `signal_type`, `filter_name`, `mapping_model_id`, `processing_location`, `uploaded_data_type`, `raw_video_saved` |
 
 ---
@@ -395,6 +410,7 @@ Events are labelled **cautiously as candidates** when reference validation is un
 | `tracking_lost` | face/eye tracking unavailable or below threshold |
 | `fixation_candidate` | low-velocity interval passing quality criteria |
 | `saccade_candidate` | rapid eye/gaze movement passing basic criteria |
+| `smooth_pursuit_candidate` | sustained tracking of a moving target (pursuit), labelled cautiously |
 | `saccade_head_still` | saccade-like event with low head-motion contamination |
 | `saccade_during_head_movement` | saccade-like event during moderate head movement |
 | `uncertain_head_motion` | interval too affected by head movement to classify confidently |
