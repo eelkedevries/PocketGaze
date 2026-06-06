@@ -12,6 +12,7 @@ import {
 import { ContentMapper, type ContentRect } from '../lib/contentCoordinates';
 import AoiTask from './aoiTask';
 import ReadingPassageTask from './readingPassageTask';
+import VisualSearchTask from './visualSearchTask';
 import ExportButton from '../components/ExportButton';
 import { StimulusLogger } from '../lib/stimulusLog';
 import { SessionStore } from '../lib/sessionStore';
@@ -351,6 +352,9 @@ function Step7LiveDemo() {
 
       <h3 className="content-demo__subheading">Reading passage — per-line areas of interest</h3>
       <ReadingPassageTask />
+
+      <h3 className="content-demo__subheading">Visual search — target vs distractors</h3>
+      <VisualSearchTask />
     </div>
   );
 }
