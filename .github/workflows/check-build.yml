@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Gitleaks scans the SHA^..SHA range on pull_request events; a full
+          # history is required so the parent commit can be resolved (a shallow
+          # clone makes `git log SHA^..SHA` fail with "unknown revision").
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
