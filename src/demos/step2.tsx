@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
+import { IlluminationFailurePanel } from '../components/LimitationPanels';
 import { FaceFeatureExtractor, type FaceFeatures } from '../lib/featureExtraction';
 import {
   LEFT_EYE_EAR_IDX,
@@ -568,6 +569,8 @@ function Step2LiveDemo() {
           </figure>
         </div>
       )}
+
+      <IlluminationFailurePanel />
     </div>
   );
 }

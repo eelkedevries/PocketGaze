@@ -1303,3 +1303,13 @@ body {
   color: var(--colour-muted);
   font-size: 0.85rem;
 }
+
+/* Step 2 illumination / failure-mode panel list (068). */
+.limitation-panel__modes {
+  margin: 0.5rem 0;
+  padding-left: 1.1rem;
+}
+
+.limitation-panel__modes li {
+  margin: 0.3rem 0;
+}

@@ -111,6 +111,62 @@ export function NoCornealReflectionPanel() {
   );
 }
 
+/** Step 2: why tracking fails — illumination, occlusion, motion, and throttling. */
+export function IlluminationFailurePanel() {
+  return (
+    <section className="limitation-panel" aria-label="Why tracking fails">
+      <h3 className="limitation-panel__title">Why tracking fails</h3>
+      <p>
+        Detection is only as good as the image the camera delivers. These are the common conditions
+        that degrade or break face- and eye-tracking in the browser, and what each one does to the
+        signal:
+      </p>
+      <ul className="limitation-panel__modes">
+        <li>
+          <strong>Low light</strong> — the camera raises gain and exposure, so frames get noisier and
+          slower; landmark and iris-centre estimates become unstable.
+        </li>
+        <li>
+          <strong>Side lighting</strong> — asymmetric shadows across the face bias eye-region
+          detection and the iris centre, often affecting one eye more than the other.
+        </li>
+        <li>
+          <strong>Glasses glare</strong> — bright reflections on the lenses occlude the iris, causing
+          lost or jumpy iris-centre estimates.
+        </li>
+        <li>
+          <strong>Occlusion (hair, eyelid, hand, face)</strong> — missing landmarks; a partly hidden
+          face drops to “no face” or produces unstable detections downstream.
+        </li>
+        <li>
+          <strong>Extreme yaw or pitch</strong> — eye regions foreshorten and pose becomes
+          unreliable; beyond a moderate angle the model loses the face entirely.
+        </li>
+        <li>
+          <strong>Low resolution</strong> — too few pixels span the iris, so the iris-centre proxy
+          quantises and jitters.
+        </li>
+        <li>
+          <strong>Hand-held movement</strong> — motion blur and rapid head/phone motion mimic
+          saccades and break tracking (see head-motion quality, Step 3).
+        </li>
+        <li>
+          <strong>Autofocus and exposure shifts</strong> — sudden changes in focus or brightness
+          momentarily rescale or wash out the image and destabilise detection.
+        </li>
+        <li>
+          <strong>Browser throttling</strong> — a backgrounded tab or thermal throttling drops the
+          frame rate, widening the gaps between samples (see the timing readout, Step 1).
+        </li>
+      </ul>
+      <p className="limitation-panel__caption">
+        Most of these surface live as low per-eye quality, “no face”, or a falling frame rate, rather
+        than as silently wrong numbers (§6.3, §6.4).
+      </p>
+    </section>
+  );
+}
+
 /** Limitations/about: microsaccades and pupillometry are out of reach; no fake detector. */
 export function OutOfReachPanel() {
   return (
