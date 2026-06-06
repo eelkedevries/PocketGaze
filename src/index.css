@@ -1349,6 +1349,27 @@ body {
   background: #e5707e;
 }
 
+.evlab__scores {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0.6rem 0 0.3rem;
+  font-size: 0.9rem;
+}
+
+.evlab__score--ok strong {
+  color: #46c08b;
+}
+
+.evlab__score--bad strong {
+  color: #e5707e;
+}
+
+.evlab__note {
+  font-size: 0.85rem;
+  color: var(--colour-muted);
+}
+
 /* Live latency budget (073b). */
 .latency-budget {
   margin-top: 1rem;

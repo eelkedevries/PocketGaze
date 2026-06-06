@@ -15,6 +15,7 @@ import {
   generateSyntheticTrace,
   DEFAULT_SYNTHETIC_TRACE_PARAMS,
   type SyntheticTraceParams,
+  type GroundTruthInterval,
 } from '../lib/syntheticTrace';
 
 const W = 720;
@@ -24,6 +25,70 @@ const STRIP_H = 16;
 
 function isFixation(t: DetectedEvent['event_type']): boolean {
   return t === 'fixation_candidate';
+}
+
+type Category = 'fixation' | 'saccade';
+
+function detectedCategory(t: DetectedEvent['event_type']): Category {
+  return t === 'fixation_candidate' ? 'fixation' : 'saccade';
+}
+
+function overlap(aS: number, aE: number, bS: number, bE: number): number {
+  return Math.max(0, Math.min(aE, bE) - Math.max(aS, bS));
+}
+
+interface Comparison {
+  matchedDetIdx: Set<number>;
+  missedTrue: GroundTruthInterval[];
+  falsePositives: DetectedEvent[];
+  matchedCount: number;
+  trueCount: number;
+  meanOnsetErrorMs: number | null;
+}
+
+// Greedy overlap match between non-blink ground-truth events and detected events of
+// the same category. Unmatched true events are misses; unmatched detected events are
+// false positives; onset timing error is averaged over matched pairs.
+function compareEvents(
+  groundTruth: GroundTruthInterval[],
+  detected: DetectedEvent[],
+): Comparison {
+  const trueEvents = groundTruth.filter((g) => g.type !== 'blink');
+  const matchedDetIdx = new Set<number>();
+  const missedTrue: GroundTruthInterval[] = [];
+  let onsetErrSum = 0;
+  let matchedCount = 0;
+
+  for (const te of trueEvents) {
+    let bestIdx = -1;
+    let bestOverlap = 0;
+    detected.forEach((d, i) => {
+      if (matchedDetIdx.has(i)) return;
+      if (detectedCategory(d.event_type) !== te.type) return;
+      const ov = overlap(te.startMs, te.endMs, d.event_start_ms, d.event_end_ms);
+      if (ov > bestOverlap) {
+        bestOverlap = ov;
+        bestIdx = i;
+      }
+    });
+    if (bestIdx >= 0 && bestOverlap > 0) {
+      matchedDetIdx.add(bestIdx);
+      onsetErrSum += Math.abs(detected[bestIdx].event_start_ms - te.startMs);
+      matchedCount++;
+    } else {
+      missedTrue.push(te);
+    }
+  }
+
+  const falsePositives = detected.filter((_, i) => !matchedDetIdx.has(i));
+  return {
+    matchedDetIdx,
+    missedTrue,
+    falsePositives,
+    matchedCount,
+    trueCount: trueEvents.length,
+    meanOnsetErrorMs: matchedCount > 0 ? onsetErrSum / matchedCount : null,
+  };
 }
 
 export default function EventDetectionLab() {
@@ -36,6 +101,10 @@ export default function EventDetectionLab() {
   const detected = useMemo(
     () => detectEvents(trace.samples, thresholds),
     [trace, thresholds],
+  );
+  const comparison = useMemo(
+    () => compareEvents(trace.groundTruth, detected),
+    [trace, detected],
   );
 
   const dur = trace.durationMs;
@@ -134,21 +203,63 @@ export default function EventDetectionLab() {
         {/* Signals */}
         <path d={linePath('x')} fill="none" stroke="#4c9aff" strokeWidth={1.25} />
         <path d={linePath('y')} fill="none" stroke="#f0b429" strokeWidth={1.25} />
-        {/* Detected-events strip */}
-        <text x={PAD} y={H - STRIP_H - 12} fontSize="9" fill="#9bacc4">Detected events:</text>
-        {detected.map((e, i) => (
+        {/* Missed true events: red dashed outline in the plot area */}
+        {comparison.missedTrue.map((g, i) => (
           <rect
-            key={i}
-            x={mapX(e.event_start_ms)}
-            y={H - PAD - STRIP_H}
-            width={Math.max(2, mapX(e.event_end_ms) - mapX(e.event_start_ms))}
-            height={STRIP_H}
-            rx={2}
-            fill={isFixation(e.event_type) ? '#46c08b' : '#4c9aff'}
-            opacity={0.6 + 0.4 * e.event_confidence}
+            key={`miss${i}`}
+            x={mapX(g.startMs)}
+            y={plotTop}
+            width={Math.max(2, mapX(g.endMs) - mapX(g.startMs))}
+            height={plotH}
+            fill="none"
+            stroke="#e5707e"
+            strokeDasharray="4 3"
+            strokeWidth={1.25}
           />
         ))}
+        {/* Detected-events strip; false positives get a red border */}
+        <text x={PAD} y={H - STRIP_H - 12} fontSize="9" fill="#9bacc4">Detected events:</text>
+        {detected.map((e, i) => {
+          const fp = !comparison.matchedDetIdx.has(i);
+          return (
+            <rect
+              key={i}
+              x={mapX(e.event_start_ms)}
+              y={H - PAD - STRIP_H}
+              width={Math.max(2, mapX(e.event_end_ms) - mapX(e.event_start_ms))}
+              height={STRIP_H}
+              rx={2}
+              fill={isFixation(e.event_type) ? '#46c08b' : '#4c9aff'}
+              opacity={0.6 + 0.4 * e.event_confidence}
+              stroke={fp ? '#e5707e' : 'none'}
+              strokeWidth={fp ? 2 : 0}
+            />
+          );
+        })}
       </svg>
+
+      <div className="evlab__scores" aria-live="polite">
+        <span className="evlab__score evlab__score--ok">
+          Matched: <strong>{comparison.matchedCount}</strong> / {comparison.trueCount} true
+        </span>
+        <span className="evlab__score evlab__score--bad">
+          Missed: <strong>{comparison.missedTrue.length}</strong>
+        </span>
+        <span className="evlab__score evlab__score--bad">
+          False positives: <strong>{comparison.falsePositives.length}</strong>
+        </span>
+        <span className="evlab__score">
+          Mean onset timing error:{' '}
+          <strong>
+            {comparison.meanOnsetErrorMs === null ? '—' : `${comparison.meanOnsetErrorMs.toFixed(1)} ms`}
+          </strong>
+        </span>
+      </div>
+      <p className="evlab__note">
+        Missed true events are outlined with a red dashed box; false positives have a red border on
+        the strip. Lower the velocity threshold or the sampling rate and watch misses and timing
+        error rise — the I-VT / I-DT trade-off made visible against a known ground truth.
+      </p>
 
       <p className="evlab__legend">
         Bands: <span className="evlab__swatch evlab__swatch--fix" /> fixation,{' '}
