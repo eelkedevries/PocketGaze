@@ -735,6 +735,10 @@ function Step6LiveDemo() {
 
 // --- Subprocess panels -------------------------------------------------------
 
+// TODO (071): "unstable candidate events" (events flickering near the thresholds)
+// is not yet a distinct, reliable detector — per-event confidence exists, but a
+// stability signal across consecutive events does not. We surface per-event
+// confidence rather than guessing an instability warning from weak evidence.
 function Step6DetailsPanels() {
   const { state, recentEvents, filterParams, velocitySamples, store } = useStep6Demo();
   const running = state === 'tracking' || state === 'no-face';

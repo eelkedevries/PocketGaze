@@ -597,6 +597,11 @@ function CalibrationWarpGrid({ mapping }: { mapping: GazeCalibrationResult['mapp
   );
 }
 
+// TODO (071): validation DRIFT (accuracy degrading after calibration) is not yet
+// reliably detectable here — it needs periodic re-validation over time, which the
+// calibration-drift demo (075) introduces. Until then we do not guess a drift
+// warning from a single validation pass.
+
 // --- Validation readout + error map -----------------------------------------
 
 function ValidationReadout({ validation }: { validation: ValidationResult }) {

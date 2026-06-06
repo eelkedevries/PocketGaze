@@ -217,6 +217,15 @@ function Step1LiveDemo() {
           : 'Start the camera to see the effective frame rate and per-frame timing. Processing stays on your device.'}
       </p>
 
+      {/* Actionable low-frame-rate warning (071): detectable from the live effective FPS. */}
+      {running && tick && tick.effectiveFps > 0 && tick.effectiveFps < 20 && (
+        <p className="demo-warning" role="alert">
+          Frame rate is low ({formatFps(tick.effectiveFps)}). Close other tabs and apps, improve
+          lighting so the camera does not raise its exposure, and avoid backgrounding this tab —
+          a low rate widens the gaps between samples and degrades every downstream estimate.
+        </p>
+      )}
+
       {running && tick && <FrameFilmstrip store={store} tick={tick} />}
 
       <SamplingRatePanel />

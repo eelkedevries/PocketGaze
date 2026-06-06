@@ -536,6 +536,15 @@ function Step2LiveDemo() {
         {state === 'error' && (errorMessage ?? 'The face-tracking model could not be loaded.')}
       </p>
 
+      {/* Actionable unstable-landmarks warning (071): detectable from the live face quality. */}
+      {state === 'tracking' && features && features.faceQuality < 0.5 && (
+        <p className="demo-warning" role="alert">
+          Landmark detection is unstable (low face quality). Face the camera straight on, improve
+          and even out the lighting, remove glasses glare, and clear hair or hands from your face —
+          unstable landmarks propagate noise into the eye-local signal and head pose.
+        </p>
+      )}
+
       {cameraReady && (
         <div className="eye-detail">
           <figure className="eye-detail__item">
