@@ -58,6 +58,18 @@ Recorded at setup; these override the defaults above where they differ. Leave bl
 - Never commit secrets, tokens, or `.env*` files.
 - The site supports a single master “Show implementation details” control that reveals or hides optional implementation/subprocess panels on each step page; keep this pattern when adding new step content.
 
+### Additional working rules
+
+These were folded in from the revision-7 external-driver prompt batch (`docs-dev/agent/prompts/057`–`078`). They add to, and do not replace, the rules above.
+
+- **Available checks.** The real checks in this repository are `npm run build` (verify command), `npm run check` (typecheck-only pass), and `npm run test` (`node --test`). **There is no lint script; do not assume one.** Run the available checks before every commit. If a script is missing or fails for a pre-existing reason, say so rather than inventing a result.
+- **Anti-fabrication.** Do not invent benchmark values, citations, accuracy figures, or runtime test results. Any numeric empirical claim in user-facing copy must carry a real, checkable source or be removed.
+- **Verification deferral.** Only if a runtime check genuinely cannot run here (no camera, browser, or network) may a task be marked "implemented; verification deferred". This covers runtime/browser verification only — never implementation scope, and never the toolchain checks, which must always run and pass. List each deferred check and add it to the manual verification checklist. Deferral may not be used to end an unfinished implementation.
+- **Raw-signal distinction.** "Raw derived signal samples" (the unfiltered eye-local signal trace) are distinct from "raw video frames" and "raw landmark data". The signal trace may be surfaced and exported; raw frames and raw landmarks must stay out of the default export (an explicitly labelled, off-by-default advanced mode aside).
+- **Do not duplicate.** Before creating any panel, table, glossary, figure, or demo, check the current-state audit (`docs-dev/reviews/current-state-audit.md`). If the artefact already exists, extend, relocate, or cite it; do not create a second one. Create from scratch only when the audit confirms absence.
+- **Orientation notes are development-only.** Write audit and orientation notes under `docs-dev/`, never under `docs/` and never into the build output (`scripts/check-public-build.sh` enforces this).
+- **External-driver commit messages.** External-driver prompts use conventional-commit prefixes (`feat:`, `fix:`, `docs:`, `refactor:`) unless they have been scaffolded as numbered prompt files under `docs-dev/agent/prompts/`, in which case the "commit message = prompt filename" rule applies (as it does for the `057`–`078` batch).
+
 ## Supporting guides
 
 `how_to_use.md` (map + daily loop), `prompt_authoring_guide.md` (writing prompts), `prompt_execution_guide.md` (running them), `prompt_iteration_guide.md` (supersede/revert), `document_contract.md` (what documents the project expects), `reviews/code_review_guide.md` (reviews).
