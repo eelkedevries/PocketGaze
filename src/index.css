@@ -1283,3 +1283,23 @@ body {
 .validation-verdict--poor {
   border-left-color: #e5707e;
 }
+
+/* Shared coordinate-chain figure (066). */
+.coord-figure {
+  margin: 1rem 0 1.25rem;
+}
+
+.coord-figure__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--colour-surface);
+  border: 1px solid var(--colour-border);
+  border-radius: 6px;
+}
+
+.coord-figure__caption {
+  margin-top: 0.4rem;
+  color: var(--colour-muted);
+  font-size: 0.85rem;
+}

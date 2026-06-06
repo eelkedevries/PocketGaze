@@ -1,6 +1,7 @@
 import type { StepDefinition } from '../steps';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
 import { stepDemos } from '../demos/registry';
+import CoordinateChainFigure from './CoordinateChainFigure';
 
 // Progressive-disclosure ladder (056): the intro (concept) is always visible;
 // the mechanism tier is a local expander; the maths tier is the deepest tier and
@@ -96,6 +97,7 @@ export default function StepPage({ step }: { step: StepDefinition }) {
           </dl>
         )}
         {step.disclosure && <DisclosureLevels disclosure={step.disclosure} />}
+        {step.coordinateFigure && <CoordinateChainFigure />}
       </section>
 
       <section className="step-section">

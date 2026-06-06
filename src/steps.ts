@@ -62,6 +62,8 @@ export interface StepDefinition {
   glossary?: GlossaryEntry[];
   /** Signal-taxonomy claims table (Step 0 only): what each signal supports and does not. */
   signalClaims?: SignalClaim[];
+  /** When true, render the shared coordinate-chain figure (066) on this step. */
+  coordinateFigure?: boolean;
   /** Extra paragraph after "implementation on this page" (e.g. how to use the master control). */
   usageNote?: string;
   /** Real (static) content for the implementation-details panel, in place of the placeholder. */
@@ -210,6 +212,7 @@ export const steps: StepDefinition[] = [
     ],
     implementationOnThisPage:
       'This page is the map. It introduces the pipeline and the vocabulary; each of Steps 1–7 then follows the same layout — a brief introduction, the options and methods, what the page implements, a live demo, optional implementation details, the outputs, and the limitations.',
+    coordinateFigure: true,
     usageNote:
       'Use the “Show implementation details” control in the header at any time. With it switched off, each step shows only its main demo and explanation; switch it on to reveal the optional subprocess panels — intermediate signals, frame timing, landmarks, head pose, filtering stages, calibration samples, and so on — that show how a result was produced. It is a single switch that applies across the whole site, including the panel below.',
     noLiveDemo: true,
@@ -343,6 +346,7 @@ export const steps: StepDefinition[] = [
     slug: 'step-4',
     navLabel: 'Step 4',
     title: 'Step 4: Eye-local and gaze signals',
+    coordinateFigure: true,
     disclosure: {
       mechanism:
         'The iris-centre proxy is normalised within each detected eye region to give the eye-local signal — calibration-light and available whenever eye-region and iris detection succeed with sufficient quality, but not screen gaze. A separate, calibrated regression (or an opt-in model) maps the eye-local feature vector to a screen-gaze estimate; the two signal kinds are kept in distinct fields and never conflated.',
@@ -377,6 +381,7 @@ export const steps: StepDefinition[] = [
     slug: 'step-5',
     navLabel: 'Step 5',
     title: 'Step 5: Calibration and personalisation',
+    coordinateFigure: true,
     disclosure: {
       mechanism:
         'A follow-the-dots task collects (eye-local feature → known screen target) pairs. A linear least-squares fit maps features to screen coordinates; fit quality is estimated by k-fold cross-validation, and a separate validation task on held-out targets measures on-screen accuracy and precision distinctly from the fit.',
@@ -445,6 +450,7 @@ export const steps: StepDefinition[] = [
     slug: 'step-7',
     navLabel: 'Step 7',
     title: 'Step 7: Content and stimulus mapping',
+    coordinateFigure: true,
     disclosure: {
       mechanism:
         'Screen-gaze coordinates are converted into content-relative coordinates using the content element’s bounding rectangle, accounting for page and element scroll and any CSS transform, so a fixed point keeps a constant content coordinate as the page moves. Fixations in content space are then aggregated per area of interest.',
