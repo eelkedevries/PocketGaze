@@ -521,6 +521,10 @@ function Step5LiveDemo() {
 
           {validation && <ValidationReadout validation={validation} />}
 
+          {validation && (
+            <CalibrationDriftCheck store={store} getEstimate={getEstimate} baseline={validation} />
+          )}
+
           <PursuitTask getEstimate={getEstimate} />
 
           <GazeContingentTask getEstimate={getEstimate} />
@@ -597,10 +601,93 @@ function CalibrationWarpGrid({ mapping }: { mapping: GazeCalibrationResult['mapp
   );
 }
 
-// TODO (071): validation DRIFT (accuracy degrading after calibration) is not yet
-// reliably detectable here — it needs periodic re-validation over time, which the
-// calibration-drift demo (075) introduces. Until then we do not guess a drift
-// warning from a single validation pass.
+// --- Calibration-drift check (075) ------------------------------------------
+
+// Gated on real validation (present and trustworthy). After a baseline validation,
+// the user makes one small, comfortable change and re-runs the held-out targets;
+// the re-measure is computed over ONLY the new quality rows (captured by offset), so
+// the before/after comparison is clean. Changes are framed as optional and gentle —
+// no awkward or sustained postures are requested.
+function CalibrationDriftCheck({
+  store,
+  getEstimate,
+  baseline,
+}: {
+  store: SessionStore;
+  getEstimate: () => ScreenGazeEstimate;
+  baseline: ValidationResult;
+}) {
+  const [offset, setOffset] = useState<number | null>(null);
+  const [after, setAfter] = useState<ValidationResult | null>(null);
+
+  const start = () => {
+    setOffset(store.byType('quality').length);
+    setAfter(null);
+  };
+
+  const onComplete = () => {
+    if (offset === null) return;
+    const newRows = store.byType('quality').slice(offset);
+    const inputs = validationInputsFromRows(newRows);
+    if (inputs.targets.length === 0) {
+      setAfter(null);
+      return;
+    }
+    setAfter({
+      summary: perTargetMetrics(inputs.targets),
+      overall: accuracy(inputs.pairs),
+      targets: inputs.targets,
+      degPerNorm: meanDegreesPerNormalised(store.byType('sample')),
+    });
+  };
+
+  const degPerNorm = baseline.degPerNorm;
+  const deg = (norm: number) => (degPerNorm != null ? ` (≈ ${fmt(norm * degPerNorm, 2)}°)` : '');
+
+  return (
+    <section className="drift-check" aria-label="Calibration-drift check">
+      <h3 className="limitation-panel__title">Calibration-drift check (optional)</h3>
+      <p className="timing-demo__note">
+        A calibration is only valid for the conditions it was fitted under. This optional check
+        re-measures the validation error after a <strong>small, comfortable</strong> change so you
+        can see drift directly. Keep it gentle — there is no need to hold an awkward pose.
+      </p>
+      {offset === null ? (
+        <button type="button" className="button" onClick={start}>
+          Start a drift check
+        </button>
+      ) : (
+        <>
+          <p className="timing-demo__note">
+            Make <em>one</em> small change if you are comfortable — for example, sit slightly closer,
+            tilt the phone a little, shift your posture, or change the lighting — then run the dots
+            again.
+          </p>
+          <ValidationTask store={store} getEstimate={getEstimate} onComplete={onComplete} />
+        </>
+      )}
+      {after && (
+        <div className="drift-check__result" aria-live="polite">
+          <p>
+            <strong>Before:</strong> accuracy {fmt(baseline.summary.meanAccuracy, 3)}
+            {deg(baseline.summary.meanAccuracy)} · precision {fmt(baseline.summary.meanPrecisionRmsS2S, 3)}
+          </p>
+          <p>
+            <strong>After the change:</strong> accuracy {fmt(after.summary.meanAccuracy, 3)}
+            {deg(after.summary.meanAccuracy)} · precision {fmt(after.summary.meanPrecisionRmsS2S, 3)}
+          </p>
+          <p>
+            <strong>Drift in accuracy:</strong>{' '}
+            {fmt(after.summary.meanAccuracy - baseline.summary.meanAccuracy, 3)}
+            {deg(Math.abs(after.summary.meanAccuracy - baseline.summary.meanAccuracy))} — a positive
+            value means the estimate moved further off target. If drift is large, recalibrate under
+            your new conditions.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
 
 // --- Validation readout + error map -----------------------------------------
 
