@@ -5,6 +5,8 @@
 // than another feature. No tracking maths, no fake detectors — just accurate,
 // cautiously-worded explanation and one illustrative figure.
 
+import SamplingRateReplay from './SamplingRateReplay';
+
 // A logistic "saccade" position-vs-time curve, sampled finely vs coarsely. The
 // coarse (~30 Hz) sampling misses the steep middle, so peak velocity and the
 // saccade's dynamics are unrecoverable (a Nyquist-style point).
@@ -84,6 +86,7 @@ export function SamplingRatePanel() {
         (right) it collapses to a straight line that misses the peak velocity — a sampling
         (Nyquist) limit, not something a better algorithm can fix in-browser (§3.1, §6.3).
       </p>
+      <SamplingRateReplay />
     </section>
   );
 }
