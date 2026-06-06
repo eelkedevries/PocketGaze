@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { ContentMapper, type ContentRect } from '../lib/contentCoordinates';
 import AoiTask from './aoiTask';
+import ReadingPassageTask from './readingPassageTask';
 import ExportButton from '../components/ExportButton';
 import { StimulusLogger } from '../lib/stimulusLog';
 import { SessionStore } from '../lib/sessionStore';
@@ -347,6 +348,9 @@ function Step7LiveDemo() {
 
       <h3 className="content-demo__subheading">Areas of interest — the applied output</h3>
       <AoiTask />
+
+      <h3 className="content-demo__subheading">Reading passage — per-line areas of interest</h3>
+      <ReadingPassageTask />
     </div>
   );
 }
