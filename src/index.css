@@ -1220,3 +1220,45 @@ body {
   color: #f0b429;
   border-color: #f0b42966;
 }
+
+/* Step 0 signal-taxonomy claims table (064). */
+.claims-table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0 1.25rem;
+}
+
+.claims-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.claims-table__caption {
+  text-align: left;
+  color: var(--colour-muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.claims-table th,
+.claims-table td {
+  border: 1px solid var(--colour-border);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+  text-align: left;
+}
+
+.claims-table thead th {
+  background: var(--colour-surface-alt);
+  color: var(--colour-text);
+}
+
+.claims-table tbody th {
+  background: var(--colour-surface);
+  color: var(--colour-accent);
+  white-space: nowrap;
+}
+
+.claims-table__not {
+  color: #f0b429;
+}

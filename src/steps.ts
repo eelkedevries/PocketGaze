@@ -10,6 +10,20 @@ export interface GlossaryEntry {
   definition: string;
 }
 
+/**
+ * One row of the Step 0 signal-taxonomy claims table: for each signal kind, what
+ * it is, whether it needs calibration/validation, and — explicitly — what it does
+ * and does not support.
+ */
+export interface SignalClaim {
+  signal: string;
+  whatItIs: string;
+  needsCalibration: string;
+  needsValidation: string;
+  supports: string;
+  doesNotSupport: string;
+}
+
 /** A single stage in the at-a-glance pipeline summary. */
 export interface PipelineStage {
   label: string;
@@ -46,6 +60,8 @@ export interface StepDefinition {
   pipelineStages?: PipelineStage[];
   /** Term/definition pairs rendered after the introduction (e.g. the signal-type glossary). */
   glossary?: GlossaryEntry[];
+  /** Signal-taxonomy claims table (Step 0 only): what each signal supports and does not. */
+  signalClaims?: SignalClaim[];
   /** Extra paragraph after "implementation on this page" (e.g. how to use the master control). */
   usageNote?: string;
   /** Real (static) content for the implementation-details panel, in place of the placeholder. */
@@ -151,6 +167,40 @@ export const steps: StepDefinition[] = [
         term: 'Candidate event labels',
         definition:
           'The exact event values used in the data: fixation_candidate, saccade_candidate, saccade_head_still, saccade_during_head_movement, uncertain_head_motion, blink, tracking_lost, and smooth_pursuit_candidate.',
+      },
+    ],
+    signalClaims: [
+      {
+        signal: 'Eye-local signal',
+        whatItIs: 'Iris-centre position within its own eye region.',
+        needsCalibration: 'No',
+        needsValidation: 'No',
+        supports: 'Movement traces, relative direction, blink and candidate-event detection.',
+        doesNotSupport: 'Where on the screen you are looking; absolute screen coordinates.',
+      },
+      {
+        signal: 'Screen-gaze estimate',
+        whatItIs: 'An estimate of the on-screen x/y point you are looking at.',
+        needsCalibration: 'Yes',
+        needsValidation: 'Yes (held-out)',
+        supports: 'Approximate point-of-regard, dwell, and content mapping after validation.',
+        doesNotSupport: 'Fine spatial claims when uncalibrated or unvalidated; sub-degree accuracy.',
+      },
+      {
+        signal: 'Content-mapped coordinate',
+        whatItIs: 'A screen-gaze point translated into the content’s own coordinates.',
+        needsCalibration: 'Yes (via screen-gaze)',
+        needsValidation: 'Yes (via screen-gaze)',
+        supports: 'AOI dwell, reading/region analysis under scroll and zoom.',
+        doesNotSupport: 'Anything the underlying screen-gaze estimate does not support.',
+      },
+      {
+        signal: 'Candidate event',
+        whatItIs: 'A cautiously labelled fixation, saccade, blink, or pursuit interval.',
+        needsCalibration: 'No (eye-local) / inherited (screen-gaze)',
+        needsValidation: 'No, but confidence is reported',
+        supports: 'Qualitative event structure and timing at coarse resolution.',
+        doesNotSupport: 'Peak velocity, the main sequence, microsaccades, or research-grade timing.',
       },
     ],
     methods: [

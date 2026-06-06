@@ -53,6 +53,38 @@ export default function StepPage({ step }: { step: StepDefinition }) {
       <section className="step-section">
         <h2>Introduction</h2>
         <p>{step.intro}</p>
+        {step.signalClaims && (
+          <div className="claims-table-wrap">
+            <table className="claims-table">
+              <caption className="claims-table__caption">
+                What each signal is, what it needs, and — explicitly — what it does and does not
+                support.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Signal</th>
+                  <th scope="col">What it is</th>
+                  <th scope="col">Needs calibration?</th>
+                  <th scope="col">Needs validation?</th>
+                  <th scope="col">Supports</th>
+                  <th scope="col">Does not support</th>
+                </tr>
+              </thead>
+              <tbody>
+                {step.signalClaims.map((row) => (
+                  <tr key={row.signal}>
+                    <th scope="row">{row.signal}</th>
+                    <td>{row.whatItIs}</td>
+                    <td>{row.needsCalibration}</td>
+                    <td>{row.needsValidation}</td>
+                    <td>{row.supports}</td>
+                    <td className="claims-table__not">{row.doesNotSupport}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         {step.glossary && (
           <dl className="glossary">
             {step.glossary.map((entry) => (
