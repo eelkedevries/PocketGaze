@@ -368,6 +368,24 @@ const QUALITY_TEXT: Record<GazeCalibrationResult['quality'], string> = {
   poor: 'Poor — recalibrate',
 };
 
+// Heuristic usable/marginal/poor verdict on the held-out validation, based on mean
+// accuracy in normalised screen units (0–1). The thresholds are a rough guide for
+// this stand-in, not a measured device-accuracy guarantee for any particular phone.
+type ValidationVerdict = 'usable' | 'marginal' | 'poor';
+
+function validationVerdict(meanAccuracyNorm: number | undefined): ValidationVerdict {
+  if (meanAccuracyNorm === undefined || !Number.isFinite(meanAccuracyNorm)) return 'poor';
+  if (meanAccuracyNorm < 0.06) return 'usable';
+  if (meanAccuracyNorm < 0.12) return 'marginal';
+  return 'poor';
+}
+
+const VALIDATION_VERDICT_TEXT: Record<ValidationVerdict, string> = {
+  usable: 'Usable',
+  marginal: 'Marginal',
+  poor: 'Poor — recalibrate',
+};
+
 // --- Live demo --------------------------------------------------------------
 
 function Step5LiveDemo() {
@@ -586,8 +604,18 @@ function ValidationReadout({ validation }: { validation: ValidationResult }) {
   const deg = (norm: number) => (degPerNorm != null ? `≈ ${fmt(norm * degPerNorm, 2)}°` : null);
   const accuracyDeg = deg(summary.meanAccuracy);
   const precisionDeg = deg(summary.meanPrecisionRmsS2S);
+  const verdict = validationVerdict(summary.meanAccuracy);
   return (
     <div className="validation-result">
+      <p
+        className={`validation-verdict validation-verdict--${verdict}`}
+        role="status"
+      >
+        Held-out validation verdict: <strong>{VALIDATION_VERDICT_TEXT[verdict]}</strong>
+        <span className="live-precision__hint">
+          {' '}heuristic, from mean accuracy in normalised units — not a device-accuracy guarantee.
+        </span>
+      </p>
       <div className="validation-result__figures">
         <div className="motion-label motion-label--low">
           <span className="motion-label__caption">Accuracy (on target?)</span>
@@ -617,6 +645,14 @@ function ValidationReadout({ validation }: { validation: ValidationResult }) {
           : '.'}{' '}
         These are not measured device-accuracy figures for any particular phone, and the degree
         values are estimates built on an assumed IPD, camera FOV, and screen size (§6.3).
+      </p>
+      <p className="timing-demo__note">
+        The full data-quality set spans accuracy, precision (RMS-S2S and BCEA), visual angle —
+        all shown above — plus data loss and latency (surfaced in Step 6’s suppression panels and
+        Step 1’s timing readout) and drift over time (the recalibration check on this step).{' '}
+        <strong>Recalibrate</strong> whenever your posture, viewing distance, lighting, or the
+        phone’s position changes noticeably: the fitted mapping is only valid for the conditions it
+        was calibrated under.
       </p>
       <ValidationErrorMap validation={validation} />
     </div>

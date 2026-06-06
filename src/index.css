@@ -1262,3 +1262,24 @@ body {
 .claims-table__not {
   color: #f0b429;
 }
+
+/* Step 5 held-out validation verdict (065). */
+.validation-verdict {
+  border-left: 3px solid var(--colour-border);
+  padding: 0.4rem 0.7rem;
+  margin: 0 0 0.75rem;
+  background: var(--colour-surface);
+  border-radius: 0 4px 4px 0;
+}
+
+.validation-verdict--usable {
+  border-left-color: #46c08b;
+}
+
+.validation-verdict--marginal {
+  border-left-color: #f0b429;
+}
+
+.validation-verdict--poor {
+  border-left-color: #e5707e;
+}
