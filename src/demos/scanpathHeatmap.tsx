@@ -50,6 +50,9 @@ export default function ScanpathHeatmap({ fixations }: { fixations: Fixation[] }
         >
           {showHeatmap ? 'Hide heatmap' : 'Show heatmap'}
         </button>
+        <span className="demo-input-mode demo-input-mode--eye-local">
+          Input mode: eye-local fixations (not validated screen gaze)
+        </span>
         <span className="calibration__progress">
           {fixations.length === 0
             ? 'Fixate around the frame to build a scanpath.'

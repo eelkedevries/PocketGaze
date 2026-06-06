@@ -164,6 +164,12 @@ export default function PursuitTask({ getEstimate }: PursuitTaskProps) {
         <button type="button" className="button" onClick={status === 'running' ? stop : start}>
           {status === 'running' ? 'Stop pursuit' : 'Start pursuit'}
         </button>
+        <span
+          className={`demo-input-mode ${hasGaze ? 'demo-input-mode--gaze' : 'demo-input-mode--none'}`}
+          aria-live="polite"
+        >
+          Input mode: {hasGaze ? 'calibrated gaze' : 'none — calibrate in Step 5 first'}
+        </span>
         <span className="calibration__progress" aria-live="polite">
           {status === 'running' && !hasGaze && 'Waiting for a gaze estimate — look at the target.'}
           {status === 'running' && hasGaze && 'Tracking…'}

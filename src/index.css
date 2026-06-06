@@ -1192,3 +1192,31 @@ body {
     font-size: 1.35rem;
   }
 }
+
+/* Per-demo input-mode indicator (062): makes the real signal source explicit. */
+.demo-input-mode {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--colour-border);
+  background: var(--colour-surface-alt);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.demo-input-mode--gaze {
+  color: #46c08b;
+  border-color: #46c08b66;
+}
+
+.demo-input-mode--eye-local {
+  color: var(--colour-accent);
+  border-color: #4c9aff66;
+}
+
+.demo-input-mode--pointer,
+.demo-input-mode--none {
+  color: #f0b429;
+  border-color: #f0b42966;
+}

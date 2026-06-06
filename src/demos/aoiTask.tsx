@@ -115,6 +115,9 @@ export default function AoiTask() {
         <button type="button" className="button" onClick={reset}>
           Reset
         </button>
+        <span className="demo-input-mode demo-input-mode--pointer">
+          Input mode: pointer (simulated gaze)
+        </span>
         <span className="calibration__progress" aria-live="polite">
           {currentAoiId ? `Looking at: ${currentAoiId}` : 'Hover an area of interest.'}
         </span>
