@@ -131,7 +131,7 @@ export const steps: StepDefinition[] = [
       mechanism:
         'Frames arrive from the front camera via getUserMedia. Each is timestamped per frame with requestVideoFrameCallback (which also exposes the source media time), falling back to requestAnimationFrame where that is unavailable. The effective frame rate is derived from the spacing between successive frames, and repeated or skipped source frames are inferred from the media-time stream.',
       maths:
-        'Effective rate ≈ 1 / median(Δt) over recent inter-frame intervals. A repeated source frame shows the same media time twice; a gap larger than roughly 1.8× the expected interval implies dropped frames. At ~30 Hz the Nyquist limit is ~15 Hz, so movements faster than that (peak saccade velocity, microsaccades) cannot be reconstructed.',
+        'Effective rate ≈ 1 / median(Δt) over recent inter-frame intervals. A repeated source frame shows the same media time twice; a gap larger than roughly 1.8× the expected interval implies dropped frames. At ~30 Hz each frame is ~33 ms apart, so a 30–80 ms saccade spans only one to three samples: its onset, offset, duration, and peak velocity cannot be recovered, even though the displacement itself is visible. Microsaccades are out of reach because of their sub-degree amplitude and sub-frame duration, not because of a Nyquist frequency bound.',
     },
     intro:
       'Before any analysis can happen, the pipeline needs a reliable stream of frames from the front-facing camera with timing information accurate enough for sample-level work. A single millisecond timestamp per frame is not enough: the browser separates the moment a video frame was composed by the hardware from the moment the pipeline processed it, and that gap matters when you later want to align eye-movement traces with stimulus events. Step 1 acquires frames, attaches the right timestamps, and checks for dropped or repeated frames so that downstream steps can trust the timing they receive.',
@@ -162,7 +162,7 @@ export const steps: StepDefinition[] = [
     title: 'Step 2: Face and eye features',
     disclosure: {
       mechanism:
-        'MediaPipe FaceLandmarker returns 478 facial landmarks. Each eye region is taken from its eye-aspect-ratio (EAR) contour; the iris proxy is the centroid of the five-point iris ring; and the EAR is mapped to an openness score used for blink detection. Only these derived features are kept — never the raw video.',
+        'MediaPipe FaceLandmarker returns 478 facial landmarks. Each eye region is taken from its eye-aspect-ratio (EAR) contour; the iris proxy is the centroid of the five-point iris ring; and the EAR is mapped to an openness score used for blink detection. Only these derived features are kept — never the raw video. Per-eye labels follow the subject\'s own anatomy (MediaPipe\'s landmark convention); because the front-camera preview is mirrored, each labelled eye appears on the matching side of the on-screen preview.',
       maths:
         'EAR = (‖p₂−p₆‖ + ‖p₃−p₅‖) / (2·‖p₁−p₄‖) over the six eye-contour points. Openness = clamp((EAR − 0.15) / (0.35 − 0.15), 0, 1); the eye is treated as closed/blinking below EAR ≈ 0.2. The iris-proxy centre is the mean of the five iris-ring landmark coordinates.',
     },
@@ -198,7 +198,7 @@ export const steps: StepDefinition[] = [
       mechanism:
         'The facial transformation matrix produced alongside the landmarks is decomposed into head rotation (yaw, pitch, roll) and an approximate translation. Rotational speed and a pose-quality proxy then label each sample low / moderate / uncertain, so head-motion-contaminated intervals can be excluded downstream rather than mistaken for eye movement.',
       maths:
-        'For a rotation R = Rz·Ry·Rx: pitch = atan2(r₂₁, r₂₂), yaw = atan2(−r₂₀, √(r₀₀² + r₁₀²)), roll = atan2(r₁₀, r₀₀) (a Tait–Bryan/Euler decomposition, robust at the gimbal-lock singularity). Monocular translation — especially depth — is unscaled and approximate.',
+        'For a rotation R = Rz·Ry·Rx: pitch = atan2(r₂₁, r₂₂), yaw = atan2(−r₂₀, √(r₀₀² + r₁₀²)), roll = atan2(r₁₀, r₀₀) (a Tait–Bryan/Euler decomposition; atan2 keeps it numerically stable across the full ±180° range, but the decomposition itself still degenerates at the gimbal-lock singularity near ±90° of the middle axis, where yaw and roll are no longer separable — in practice the face is lost before that pose is reached). Monocular translation — especially depth — is unscaled and approximate.',
     },
     intro:
       'A camera attached to a phone that moves in 3-D space cannot tell the difference between the eye moving and the head rotating or translating — both change where the iris appears in the frame. Step 3 estimates the head\'s orientation and position from the face geometry, attaches a motion-quality label to each sample, and flags intervals where head or phone movement makes the eye-movement signal too unreliable to use. Without this step, head and phone motion is silently misclassified as eye movement, corrupting the signal with artefacts that look like large, rapid gaze shifts.',
@@ -230,17 +230,17 @@ export const steps: StepDefinition[] = [
     title: 'Step 4: Eye-local and gaze signals',
     disclosure: {
       mechanism:
-        'The iris proxy is normalised within each detected eye region to give the eye-local signal — calibration-light and always available, but not screen gaze. A separate, calibrated regression (or an opt-in model) maps the eye-local feature vector to a screen-gaze estimate; the two signal kinds are kept in distinct fields and never conflated.',
+        'The iris proxy is normalised within each detected eye region to give the eye-local signal — calibration-light and available whenever eye-region and iris detection succeed with sufficient quality, but not screen gaze. A separate, calibrated regression (or an opt-in model) maps the eye-local feature vector to a screen-gaze estimate; the two signal kinds are kept in distinct fields and never conflated.',
       maths:
         'Eye-local coordinate = (iris − regionCentre) / regionHalfSize ∈ [−1, 1] per axis. Screen gaze = C · [1, cₓ, c_y, lₓ, l_y, rₓ, r_y]ᵀ, where the feature vector holds the combined and per-eye eye-local coordinates and C is the fitted coefficient matrix (Step 5).',
     },
     intro:
       'With face geometry and head pose available, Step 4 produces the main signal of interest. Two quite different signals are possible, and keeping them apart is one of the central design rules of PocketGaze. An eye-local signal measures where the iris proxy sits within the eye region — it reflects eye rotation relative to the head, is calibration-light, and is always available, but it is not the same as where you are looking on the screen. A screen-gaze estimate goes further: it maps the eye-local signal through a calibrated or trained model to give an estimated on-screen x/y position. Screen-gaze requires calibration, validation, and reliability checks before it can be used meaningfully; without those, it is too coarse for fine spatial interpretation.',
     methods: [
-      'Eye-local signal estimation: normalise the iris-proxy position within the detected eye region (accounting for face scale and head orientation) to produce a calibration-light left/right/combined eye-local coordinate. This is the baseline signal — always computable, but not screen gaze.',
+      'Eye-local signal estimation: normalise the iris-proxy position within the detected eye region (accounting for face scale and head orientation) to produce a calibration-light left/right/combined eye-local coordinate. This is the baseline signal — available only when eye-region and iris detection succeed with sufficient quality, but not screen gaze.',
       'Screen-gaze estimation via regression mapping: after a calibration step (Step 5), fit a mapping from eye-local features to known screen positions, then apply it to new frames to estimate where on the screen the user is looking.',
       'Model-based screen-gaze inference: use a pre-trained gaze model (such as WebEyeTrack, if available after a technical spike, or WebGazer as a fallback baseline) that takes the face or eye region as input and outputs screen-gaze coordinates directly.',
-      'Signal availability and confidence: report whether a screen-gaze estimate is available for each sample and attach a confidence score; the eye-local signal is always available as a fallback when screen-gaze is not.',
+      'Signal availability and confidence: report whether a screen-gaze estimate is available for each sample and attach a confidence score; the eye-local signal is available as a fallback whenever eye-region and iris detection succeed, even when screen-gaze is not.',
       'Content-mapped estimation: screen-gaze coordinates that need to be aligned with scrolling or dynamic content are handled in Step 7, not here.',
     ],
     implementationOnThisPage:
@@ -266,14 +266,14 @@ export const steps: StepDefinition[] = [
       mechanism:
         'A follow-the-dots task collects (eye-local feature → known screen target) pairs. A linear least-squares fit maps features to screen coordinates; fit quality is estimated by k-fold cross-validation, and a separate validation task on held-out targets measures on-screen accuracy and precision distinctly from the fit.',
       maths:
-        'Per axis, solve the ridge-regularised normal equations (AᵀA + λI)·c = Aᵀ·t for the coefficients c. Calibration RMS = √(mean residual²). Validation reports accuracy (mean target–estimate offset), precision (sample-to-sample RMS, “RMS-S2S”), and BCEA — the bivariate contour ellipse area.',
+        'Per axis, solve the ridge-regularised normal equations (AᵀA + λI)·c = Aᵀ·t for the coefficients c. The design matrix is rank-deficient — the combined-eye feature columns are exact averages of the per-eye columns — so the ridge term λI is required for a well-posed solve. Calibration RMS = √(mean residual²). Validation reports accuracy (mean target–estimate offset), precision (sample-to-sample RMS, “RMS-S2S”), and BCEA — the bivariate contour ellipse area.',
     },
     intro:
       'A generic gaze model cannot know how you hold your phone, how far from the screen you sit, or the geometry of your particular eye. Without calibration, even a well-engineered pipeline produces screen-gaze estimates that are too coarse for meaningful spatial analysis. Step 5 collects a set of samples at known screen positions — by asking you to follow or tap on a dot — and uses them to fit a user-specific mapping that compensates for your individual physiology, camera placement, and current posture. A held-out validation pass then estimates how well the fitted mapping generalises.',
     methods: [
       'Follow-the-dots calibration: display a dot at a sequence of known screen positions and record the eye-local or raw gaze feature at each position; the result is a set of (feature, target) pairs used to fit the mapping.',
       'Tap/click calibration: an alternative where the user taps on displayed targets, triggering a frame capture at the moment of the tap; useful when following a moving dot is impractical.',
-      'Regression mapping: fit a polynomial, affine, or neural mapping from the collected eye-local features to the target screen positions; the fitted mapping is then applied to subsequent frames to produce personalised screen-gaze estimates.',
+      'Regression mapping: fit a mapping from the collected eye-local features to the target screen positions — this site uses a regularised linear (affine) least-squares fit; richer polynomial or learned mappings are possible but are not used here. The fitted mapping is then applied to subsequent frames to produce personalised screen-gaze estimates.',
       'Model personalisation: when using a pre-trained gaze model, fine-tune or adapt it on the collected calibration samples rather than fitting a separate regression on top.',
       'Calibration-quality checks: after fitting, compute a held-out error metric (e.g. mean angular error or pixel error on withheld targets) and a consistency metric across repeated samples; report both so the user can judge whether the calibration is good enough to use.',
     ],

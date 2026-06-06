@@ -33,8 +33,8 @@ Each step page has a working live demo:
   derived from the MediaPipe facial transformation matrix and shown live.
 - **Step 4** — Eye-local gaze signals are computed and filtered. A provider selector
   lets you compare the custom regression signal against the optional WebEyeTrack provider.
-- **Step 5** — A 9-point calibration sequence collects fixations; a polynomial-regression
-  model is fitted and residuals are visualised on a grid.
+- **Step 5** — A 9-point calibration sequence collects fixations; a ridge-regularised
+  linear-regression model is fitted and residuals are visualised on a grid.
 - **Step 6** — A scrolling canvas shows the raw vs One Euro–filtered eye-local signal,
   with blue shading for blinks and red for tracking loss. Candidate fixation and saccade
   events are listed in real time.

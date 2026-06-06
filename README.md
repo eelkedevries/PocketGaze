@@ -31,7 +31,7 @@ placeholders remain.
 | Step 2 | Face-landmark and eye-feature overlay in real time (MediaPipe FaceLandmarker) |
 | Step 3 | Head-pose estimation (yaw/pitch/roll) and head-motion quality labelling |
 | Step 4 | Eye-local gaze signal extraction, One Euro filtering, per-provider comparison |
-| Step 5 | Calibration: 9-point capture, polynomial regression, residual visualisation |
+| Step 5 | Calibration: 9-point capture, ridge-regularised linear regression, residual visualisation |
 | Step 6 | Signal filtering and event detection: filtered vs raw trace, blink shading, candidate fixations and saccades |
 | Step 7 | Content-coordinate mapping: pointer-driven scrollable/zoomable panel showing screen vs content coordinates |
 

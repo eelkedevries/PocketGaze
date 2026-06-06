@@ -1,7 +1,8 @@
 // Eye-local signal estimation (specification §3.4, §4.3, §6.2, §7.2).
 //
 // The eye-local signal is the iris/pupil proxy normalised WITHIN each detected
-// eye region. It is calibration-light, always available, and reflects iris
+// eye region. It is calibration-light, available when eye-region and iris
+// detection succeed with sufficient quality, and reflects iris
 // movement relative to the head — but it is NOT screen gaze. Screen gaze (§3.4,
 // `018`/`019`) requires a calibrated mapping or trained model; this module must
 // never be presented as producing screen-gaze coordinates (Domain rule §6.2).

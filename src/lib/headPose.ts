@@ -52,8 +52,11 @@ function at(data: number[], row: number, col: number): number {
 
 /**
  * Decompose the rotation part of a 4x4 column-major transform matrix into
- * Tait-Bryan yaw/pitch/roll in degrees (the classic R = Rz·Ry·Rx extraction,
- * robust at the gimbal-lock singularity). Returns zeros for a non-4x4 input.
+ * Tait-Bryan yaw/pitch/roll in degrees (the classic R = Rz·Ry·Rx extraction;
+ * atan2 keeps it numerically stable across the full ±180° range, but the
+ * decomposition still degenerates at the gimbal-lock singularity near ±90° of
+ * the middle axis, where yaw and roll are no longer separable). Returns zeros
+ * for a non-4x4 input.
  */
 export function matrixToEulerAngles(data: number[]): EulerAngles {
   if (data.length < 16) return { yaw: 0, pitch: 0, roll: 0 };

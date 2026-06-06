@@ -71,10 +71,12 @@ export function SamplingRatePanel() {
       <p>
         The effective rate above is typically around <strong>30 frames per second</strong>. That is
         enough to locate <strong>fixations</strong> and to see <strong>large saccades</strong>{' '}
-        happen — but not to measure how they happen. Peak saccadic velocity, the{' '}
-        <em>main sequence</em> (the velocity–amplitude relationship), and fine saccade dynamics
-        unfold in tens of milliseconds, so at this rate they are <strong>under-sampled</strong> and
-        cannot be recovered. <strong>Microsaccades</strong> are out of reach entirely.
+        happen — but not to measure how they happen. An individual saccade unfolds in tens of
+        milliseconds, so its peak velocity and fine dynamics are <strong>under-sampled</strong> at
+        this rate and cannot be recovered. Because single saccades cannot be characterised, neither
+        can the <em>main sequence</em> — the relationship, measured across many saccades, between
+        amplitude and peak velocity (and between amplitude and duration).{' '}
+        <strong>Microsaccades</strong> are out of reach entirely.
       </p>
       <CoarseVsFineFigure />
       <p className="limitation-panel__caption">
