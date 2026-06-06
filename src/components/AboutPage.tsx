@@ -2,6 +2,7 @@ import { OutOfReachPanel } from './LimitationPanels';
 import MethodComparisonTable from './MethodComparisonTable';
 import DeviceBenchmarkTable from './DeviceBenchmarkTable';
 import ExportInspector from './ExportInspector';
+import ResourcesSection from './ResourcesSection';
 
 export default function AboutPage() {
   return (
@@ -73,6 +74,8 @@ export default function AboutPage() {
       <DeviceBenchmarkTable />
 
       <OutOfReachPanel />
+
+      <ResourcesSection />
 
       <section className="step-section">
         <h2>Source code</h2>
