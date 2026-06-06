@@ -43,8 +43,8 @@ export default function Layout() {
 
       <footer className="site-footer">
         <p>
-          PocketGaze — portfolio scaffold. Placeholder pages only; no camera or
-          tracking functionality yet.
+          PocketGaze — a portfolio explainer of smartphone-camera eye tracking.
+          All processing runs locally in your browser.
         </p>
         <p>
           <Link to="/about" className="site-footer__link">About &amp; Privacy</Link>

@@ -1,9 +1,8 @@
 // Step definitions for the PocketGaze seven-step pipeline explainer.
 //
-// This is scaffold content only: short, placeholder-level descriptions that
-// establish the navigation and the repeated page structure. The binding
-// project decisions and final copy will be set by a later prompt, once
-// docs-dev/reference/primary_authoritative/specification.md exists.
+// This copy is final: it describes the live demos and panels that exist on each
+// step page. The binding project decisions live in
+// docs-dev/reference/primary_authoritative/specification.md.
 
 /** A short term/definition pair (e.g. the signal-type glossary). */
 export interface GlossaryEntry {
@@ -110,17 +109,17 @@ export const steps: StepDefinition[] = [
     ],
     detailsContent: [
       'Stack: a static React + TypeScript site built with Vite and deployed to GitHub Pages.',
-      'Processing is browser-local: when the demos are added, frames are analysed on your device, and raw video is never uploaded or stored by default.',
-      'What can be exported later is derived data — signals, events, and task metadata — never the video itself.',
+      'Processing is browser-local: frames are analysed on your device, and raw video is never uploaded or stored by default.',
+      'What can be exported is derived data — signals, events, and task metadata — never the video itself.',
     ],
     outputs: [
       'A shared mental model of the seven steps and how they connect.',
       'A clear vocabulary: eye-local signal versus screen-gaze estimate versus content-mapped coordinate.',
     ],
     limitations: [
-      'This is an early scaffold: the per-step live demos are still placeholders and are being added incrementally.',
-      'No camera access, tracking, calibration, filtering, or data export is implemented yet, so nothing here is a working eye tracker.',
-      'Smartphone-camera eye tracking is inherently approximate; when the demos arrive, accuracy will be modest and movement events will be labelled as candidates.',
+      'Smartphone-camera eye tracking is inherently approximate: screen-gaze accuracy is modest and depends on calibration, lighting, viewing distance, and head pose.',
+      'The effective frame rate is low (typically around 30 Hz), so fine saccade dynamics and microsaccades cannot be recovered, and movement events are labelled cautiously as candidates.',
+      'There is no inertial sensing in the browser, so head and phone motion are inferred from face geometry alone; performance varies considerably across devices and browsers.',
     ],
   },
   {
@@ -143,7 +142,7 @@ export const steps: StepDefinition[] = [
       'Separate timing fields: record the video-frame presentation time, the capture timestamp, and the processing latency as distinct fields rather than collapsing them into one value, so the export stays reanalysable.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — a camera preview with a real-time frame-rate readout, per-frame timing display, and drop/repeat indicators — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is a camera preview with a real-time frame-rate readout, per-frame timing display, and drop/repeat indicators.',
     outputs: [
       'Timestamped frames ready for the feature-extraction pipeline.',
       'Per-frame timing fields: time_ms (milliseconds from session start), frame_id, video_frame_time, capture_time, and processing_latency_ms.',
@@ -177,7 +176,7 @@ export const steps: StepDefinition[] = [
       'Per-eye quality estimation: combine landmark confidence, eye-region size, and openness into a per-eye quality score that later steps use to weight or reject samples.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — a camera preview with a real-time overlay of detected landmarks, eye-region boundaries, and the iris proxy, together with per-eye open/closed and quality indicators — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is a camera preview with a real-time overlay of detected landmarks, eye-region boundaries, and the iris proxy, together with per-eye open/closed and quality indicators.',
     outputs: [
       'Face, eye, eyelid, and iris/pupil-proxy features per frame.',
       'Per-eye quality scores (left_eye_quality, right_eye_quality) and an overall face_quality field.',
@@ -211,7 +210,7 @@ export const steps: StepDefinition[] = [
       'Note on phone IMU: direct inertial-sensor access (accelerometer, gyroscope) is largely unavailable in the browser (the Generic Sensor API has limited browser support and requires HTTPS); head-pose estimates from the camera geometry are therefore the primary motion signal in this browser-local implementation.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — a real-time head-pose readout showing estimated yaw, pitch, and roll, together with a motion-quality label — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is a real-time head-pose readout showing estimated yaw, pitch, and roll, together with a motion-quality label.',
     outputs: [
       'Head rotation fields: head_yaw, head_pitch, head_roll (in degrees or radians).',
       'Head translation fields: head_tx, head_ty, head_tz (normalised or in camera units).',
@@ -245,7 +244,7 @@ export const steps: StepDefinition[] = [
       'Content-mapped estimation: screen-gaze coordinates that need to be aligned with scrolling or dynamic content are handled in Step 7, not here.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — an eye-local movement trace shown by default, with an optional screen-gaze overlay when a mapping or model is available, keeping the two signal types visually and terminologically distinct — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is an eye-local movement trace shown by default, with an optional screen-gaze overlay when a mapping or model is available, keeping the two signal types visually and terminologically distinct.',
     outputs: [
       'Eye-local signal fields: left_eye_x/y, right_eye_x/y, combined_eye_x/y — normalised within the eye region.',
       'Screen-gaze signal fields: gaze_x, gaze_y, gaze_available, gaze_confidence — present only when a calibrated mapping or model is active.',
@@ -279,7 +278,7 @@ export const steps: StepDefinition[] = [
       'Calibration-quality checks: after fitting, compute a held-out error metric (e.g. mean angular error or pixel error on withheld targets) and a consistency metric across repeated samples; report both so the user can judge whether the calibration is good enough to use.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — a follow-the-dots task at known screen positions, followed by a fitted mapping and a simple validation error readout — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is a follow-the-dots task at known screen positions, followed by a fitted mapping and a held-out validation error readout.',
     outputs: [
       'A user-specific mapping model that translates eye-local features into personalised screen-gaze coordinates.',
       'Calibration rows in the export, recording each dot position and the corresponding eye-local features.',
@@ -313,7 +312,7 @@ export const steps: StepDefinition[] = [
       'Velocity and displacement event detection: compute frame-to-frame velocity and displacement in the filtered signal, apply thresholds to identify low-velocity intervals (fixation candidates) and rapid transitions (saccade-like candidates), and score each detection with a confidence value.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — raw and filtered signal traces shown together, with cautiously labelled candidate events overlaid — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is raw and filtered signal traces shown together, with cautiously labelled candidate events overlaid.',
     outputs: [
       'Filtered signal columns alongside the original raw columns, with the filter name and parameters recorded in the export.',
       'Event rows using the candidate vocabulary: fixation_candidate, saccade_candidate, saccade_head_still, saccade_during_head_movement, blink, tracking_lost, and uncertain_head_motion.',
@@ -347,7 +346,7 @@ export const steps: StepDefinition[] = [
       'Note on cloud-only alignment: aligning tracking data with server-rendered or dynamically fetched content requires backend timestamps and a shared clock, which is out of scope for this browser-local implementation.',
     ],
     implementationOnThisPage:
-      'The live demo for this step — a side-by-side contrast of screen coordinates and content-relative coordinates for content that scrolls or transforms — is not yet implemented. The placeholder below marks where it will appear.',
+      'The live demo for this step is a side-by-side contrast of screen coordinates and content-relative coordinates for content that scrolls or transforms.',
     outputs: [
       'Content-relative coordinate fields: content_x, content_y, content_mapping_available — the gaze position expressed in the content\'s own coordinate space.',
       'Stimulus rows recording the identity, position, and timing of each task or display event.',

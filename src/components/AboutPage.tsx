@@ -15,7 +15,7 @@ export default function AboutPage() {
           — from camera capture and face-landmark detection, through head-pose estimation,
           eye-local signal extraction, calibrated gaze mapping, noise filtering, candidate
           event detection, and finally content-coordinate alignment. Each step has its own
-          page with an explanation and a live demo (demos are added incrementally).
+          page with an explanation and a working live demo.
         </p>
         <p>
           The site is entirely static. It runs in your browser, is hosted on GitHub Pages,
