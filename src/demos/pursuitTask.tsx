@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
+import { OneEuroVectorFilter } from '../lib/oneEuroFilter';
 import {
   pursuitTarget,
   pursuitGain,
@@ -45,6 +46,10 @@ export default function PursuitTask({ getEstimate }: PursuitTaskProps) {
   const bufferRef = useRef<PursuitSample[]>([]);
   const runningRef = useRef(false);
   const lastUiRef = useRef(0);
+  // Smooth the gaze before measuring: raw jitter adds path length, which would
+  // inflate the path-length-ratio gain. The same filter the pipeline uses.
+  const filterRef = useRef<OneEuroVectorFilter>(new OneEuroVectorFilter(2));
+  const prevTickRef = useRef<number | null>(null);
 
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<PursuitGainResult | null>(null);
@@ -107,14 +112,20 @@ export default function PursuitTask({ getEstimate }: PursuitTaskProps) {
     const now = performance.now();
     const t = now - startRef.current;
     const target = pursuitTarget(t, PURSUIT_PARAMS);
-    const gaze = getEstimate();
+    let gaze = getEstimate();
     if (gaze.gaze_available && gaze.gaze_x != null && gaze.gaze_y != null) {
-      bufferRef.current.push({ t_ms: t, target, gaze: { x: gaze.gaze_x, y: gaze.gaze_y } });
+      const dt = prevTickRef.current === null ? 1 / 60 : (now - prevTickRef.current) / 1000;
+      prevTickRef.current = now;
+      const [fx, fy] = filterRef.current.filter([gaze.gaze_x, gaze.gaze_y], dt);
+      gaze = { ...gaze, gaze_x: fx, gaze_y: fy };
+      bufferRef.current.push({ t_ms: t, target, gaze: { x: fx, y: fy } });
       // Keep only the rolling window.
       const cutoff = t - WINDOW_MS;
       while (bufferRef.current.length > 0 && bufferRef.current[0].t_ms < cutoff) {
         bufferRef.current.shift();
       }
+    } else {
+      prevTickRef.current = null;
     }
     draw(target, gaze);
     if (now - lastUiRef.current >= 100) {
@@ -127,6 +138,8 @@ export default function PursuitTask({ getEstimate }: PursuitTaskProps) {
 
   const start = useCallback(() => {
     bufferRef.current = [];
+    filterRef.current.reset();
+    prevTickRef.current = null;
     startRef.current = performance.now();
     lastUiRef.current = 0;
     runningRef.current = true;
@@ -230,8 +243,11 @@ export default function PursuitTask({ getEstimate }: PursuitTaskProps) {
             </ul>
             <p className="panel__note">
               Gain is the ratio of gaze to target path length over the same time, i.e. mean eye
-              speed ÷ mean target speed. It is a qualitative, uncalibrated-friendly check — the
-              gaze estimate is only as good as the calibration, and the label is a candidate (§6.3).
+              speed ÷ mean target speed, computed on the One Euro–smoothed gaze — raw jitter adds
+              path length and would inflate the ratio. Research-grade pursuit gain goes further: it
+              is a velocity gain computed after detecting and removing catch-up saccades, which this
+              qualitative check does not attempt (§6.3). The gaze estimate is only as good as the
+              calibration, and the label is a candidate.
             </p>
           </section>
         </div>

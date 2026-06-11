@@ -1386,6 +1386,10 @@ body {
   color: var(--colour-text);
 }
 
+.search-item__letter {
+  display: inline-block;
+}
+
 .search-item--target-found {
   background: #46c08b33;
   border-color: #46c08b;

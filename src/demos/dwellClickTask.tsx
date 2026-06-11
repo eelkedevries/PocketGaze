@@ -86,9 +86,11 @@ export default function DwellClickTask() {
   return (
     <div className="aoi">
       <p className="timing-demo__note">
-        Rest the pointer (a gaze stand-in) on a button for ~{DWELL_MS} ms to select it — dwell-to-click,
-        the standard gaze interaction. Targets are deliberately large; this shows the interaction, not
-        pointing accuracy (§6.3).
+        Rest the pointer (a gaze stand-in) on a button for ~{DWELL_MS} ms to select it —
+        dwell-to-click, the standard gaze interaction. The threshold sits at the cautious end of
+        the ~300–1000 ms range used in gaze-interaction research: shorter dwells select faster but
+        risk the <strong>Midas touch</strong> — everything you merely look at gets selected.
+        Targets are deliberately large; this shows the interaction, not pointing accuracy (§6.3).
       </p>
 
       <div className="aoi__controls">

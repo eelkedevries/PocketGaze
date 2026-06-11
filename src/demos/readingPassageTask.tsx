@@ -39,7 +39,9 @@ export default function ReadingPassageTask() {
       <p className="timing-demo__note">
         Read the passage line by line. The pointer stands in for gaze (real screen gaze needs
         calibration); each line is an area of interest, so dwell per line approximates where reading
-        effort went — qualitatively (§6.3).
+        effort went — qualitatively (§6.3). Research-grade reading studies use <strong>word-level</strong>{' '}
+        areas of interest; line-level ones are the recognised coarse alternative, and the robust
+        choice when gaze is noisy or drifts vertically — exactly the webcam situation.
       </p>
 
       <div className="aoi__controls">

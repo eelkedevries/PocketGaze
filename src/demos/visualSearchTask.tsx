@@ -2,6 +2,9 @@
 // each item is an area of interest. The pointer (a clearly-labelled gaze stand-in)
 // is mapped to items, distinguishing the TARGET AOI from DISTRACTOR AOIs: it reports
 // time-to-first-fixation on the target and dwell spent on the target vs distractors.
+// Letters are drawn at random orientations — the classic T-among-rotated-Ls display,
+// where the target shares its features with the distractors so it does not "pop out"
+// and search proceeds item by item, giving the TTFF something real to measure.
 // Qualitative over a coarse stand-in, not validated search behaviour (§6.3).
 
 import { useMemo, useState } from 'react';
@@ -27,11 +30,17 @@ const AOIS: Aoi[] = Array.from({ length: COUNT }, (_, i) => {
   };
 });
 
+/** One random quarter-turn (0/90/180/270°) per item, regenerated per search. */
+function randomRotations(): number[] {
+  return Array.from({ length: COUNT }, () => 90 * Math.floor(Math.random() * 4));
+}
+
 export default function VisualSearchTask() {
   const aois = useMemo(() => AOIS, []);
   const { panelRef, currentAoiId, metrics, onPointerMove, onPointerLeave, reset } =
     useAoiVisits(aois);
   const [targetIndex, setTargetIndex] = useState(() => Math.floor(Math.random() * COUNT));
+  const [rotations, setRotations] = useState<number[]>(randomRotations);
 
   const targetId = `Item ${targetIndex + 1}`;
   const targetRow = metrics.perAoi.find((r) => r.id === targetId);
@@ -43,14 +52,17 @@ export default function VisualSearchTask() {
   const newSearch = () => {
     reset();
     setTargetIndex(Math.floor(Math.random() * COUNT));
+    setRotations(randomRotations());
   };
 
   return (
     <div className="aoi">
       <p className="timing-demo__note">
-        Find the <strong>T</strong> among the Ls by moving the pointer (a gaze stand-in). The demo
-        distinguishes the target area of interest from the distractors and reports how long it took
-        to first land on the target — qualitatively, over a coarse stand-in (§6.3).
+        Find the <strong>T</strong> among the rotated Ls by moving the pointer (a gaze stand-in).
+        Because the T is built from the same two strokes as the Ls and every letter is rotated, it
+        does not pop out — you have to inspect items one by one, which is what makes the
+        time-to-first-fixation on the target meaningful. Reported qualitatively, over a coarse
+        stand-in (§6.3).
       </p>
 
       <div className="aoi__controls">
@@ -93,7 +105,12 @@ export default function VisualSearchTask() {
                 height: `${a.height * 100}%`,
               }}
             >
-              {isTarget ? 'T' : 'L'}
+              <span
+                className="search-item__letter"
+                style={{ transform: `rotate(${rotations[i]}deg)` }}
+              >
+                {isTarget ? 'T' : 'L'}
+              </span>
             </div>
           );
         })}

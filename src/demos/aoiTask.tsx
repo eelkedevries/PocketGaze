@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useMemo } from 'react';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
-import { aoiMetrics, type Aoi, type AoiFixation } from '../lib/aoiMetrics';
+import { type Aoi } from '../lib/aoiMetrics';
+import { useAoiVisits } from './useAoiVisits';
 import ScanpathHeatmap from './scanpathHeatmap';
 
 // AOI dwell-analysis demo (specification §3.7, §6.2, §6.3, §2.5/§2.6).
@@ -8,9 +9,10 @@ import ScanpathHeatmap from './scanpathHeatmap';
 // The applied output of content-mapped gaze: per-AOI dwell time, fixation count,
 // and time-to-first-fixation over a small reading/viewing task. Consistent with
 // Step 7, the pointer stands in for gaze (real screen gaze needs calibration,
-// §6.2). Visits to each AOI are accumulated into content-space fixations and
-// scored with the shared `045` metrics — no AOI maths lives here. The figures are
-// qualitative over a coarse stand-in signal, never validated attention (§6.3).
+// §6.2). Visit accumulation and scoring are shared with the other Step 7 tasks
+// via `useAoiVisits` (which wraps the `045` metrics) — no AOI maths lives here.
+// The figures are qualitative over a coarse stand-in signal, never validated
+// attention (§6.3).
 
 // AOIs in content-relative coordinates (0–1 within the task panel).
 const AOIS: Aoi[] = [
@@ -20,89 +22,12 @@ const AOIS: Aoi[] = [
   { id: 'Caption', x: 0.04, y: 0.7, width: 0.44, height: 0.16 },
 ];
 
-interface OpenVisit {
-  aoiId: string;
-  entryMs: number;
-  sumX: number;
-  sumY: number;
-  n: number;
-  lastMs: number;
-}
-
 export default function AoiTask() {
   const { showDetails } = useImplementationDetails();
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const taskStartRef = useRef<number | null>(null);
-  const closedRef = useRef<AoiFixation[]>([]);
-  const openRef = useRef<OpenVisit | null>(null);
+  const aois = useMemo(() => AOIS, []);
+  const { panelRef, fixations, currentAoiId, metrics, onPointerMove, onPointerLeave, reset } =
+    useAoiVisits(aois);
 
-  const [fixations, setFixations] = useState<AoiFixation[]>([]);
-  const [currentAoiId, setCurrentAoiId] = useState<string | null>(null);
-
-  const openToFixation = (v: OpenVisit, now: number): AoiFixation => ({
-    content_x: v.sumX / v.n,
-    content_y: v.sumY / v.n,
-    durationMs: now - v.entryMs,
-    onsetMs: v.entryMs - (taskStartRef.current ?? v.entryMs),
-    content_mapping_available: true,
-  });
-
-  const flush = useCallback((now: number) => {
-    const open = openRef.current;
-    const list = [...closedRef.current];
-    if (open) list.push(openToFixation(open, now));
-    setFixations(list);
-  }, []);
-
-  const onPointerMove = useCallback(
-    (e: ReactPointerEvent) => {
-      const panel = panelRef.current;
-      if (!panel) return;
-      const now = performance.now();
-      if (taskStartRef.current === null) taskStartRef.current = now;
-      const rect = panel.getBoundingClientRect();
-      const cx = (e.clientX - rect.left) / rect.width;
-      const cy = (e.clientY - rect.top) / rect.height;
-      const inside = cx >= 0 && cx <= 1 && cy >= 0 && cy <= 1;
-      const aoi = inside ? AOIS.find((a) => cx >= a.x && cx <= a.x + a.width && cy >= a.y && cy <= a.y + a.height) : undefined;
-      const aoiId = aoi?.id ?? null;
-
-      const open = openRef.current;
-      if (open && open.aoiId === aoiId && aoiId != null) {
-        open.sumX += cx;
-        open.sumY += cy;
-        open.n += 1;
-        open.lastMs = now;
-      } else {
-        if (open) closedRef.current.push(openToFixation(open, now));
-        openRef.current =
-          aoiId != null ? { aoiId, entryMs: now, sumX: cx, sumY: cy, n: 1, lastMs: now } : null;
-      }
-      setCurrentAoiId(aoiId);
-      flush(now);
-    },
-    [flush],
-  );
-
-  const onPointerLeave = useCallback(() => {
-    const now = performance.now();
-    if (openRef.current) {
-      closedRef.current.push(openToFixation(openRef.current, now));
-      openRef.current = null;
-    }
-    setCurrentAoiId(null);
-    setFixations([...closedRef.current]);
-  }, []);
-
-  const reset = useCallback(() => {
-    closedRef.current = [];
-    openRef.current = null;
-    taskStartRef.current = null;
-    setFixations([]);
-    setCurrentAoiId(null);
-  }, []);
-
-  const metrics = useMemo(() => aoiMetrics(fixations, AOIS), [fixations]);
   // Reuse the existing scanpath/heatmap component over the same pointer-driven
   // fixations (076d): content-space, clearly labelled as a pointer stand-in.
   const heatmapFixations = useMemo(
