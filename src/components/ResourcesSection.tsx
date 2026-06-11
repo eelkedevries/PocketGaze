@@ -14,7 +14,11 @@ const THEMES: Theme[] = [
     heading: 'Video-based eye tracking',
     body:
       'Tracking the eye from ordinary camera frames, without specialised illumination. Cheap and ubiquitous, but bound by the camera’s resolution and frame rate.',
-    pointers: ['Webcam eye tracking in the browser (e.g. the WebGazer project)'],
+    pointers: [
+      'Webcam eye tracking in the browser (e.g. the WebGazer project)',
+      'WebEyeTrack (2025) — the model-based provider offered on Step 4',
+      'EyeTrax — landmark-based webcam gaze with corner-anchored features and ridge regression, the same family of approach as this site’s provider A',
+    ],
   },
   {
     heading: 'Infrared pupil / corneal-reflection tracking',
@@ -26,13 +30,19 @@ const THEMES: Theme[] = [
     heading: 'Appearance-based gaze estimation',
     body:
       'Learning gaze direction directly from the appearance of the eye/face region, rather than from explicit geometry. This is how camera-only gaze estimation reaches usable accuracy without a glint.',
-    pointers: ['Appearance-based gaze estimation; smartphone-camera gaze research'],
+    pointers: [
+      'Appearance-based gaze estimation; smartphone-camera gaze research',
+      'The MPIIGaze and GazeCapture datasets and the data-normalisation convention (fixed virtual camera, roll cancelled)',
+    ],
   },
   {
     heading: 'Calibration and validation',
     body:
       'Calibration fits a user-specific mapping; validation measures error on held-out targets. They answer different questions — fit consistency versus on-screen accuracy — and must be reported separately.',
-    pointers: ['Held-out validation; accuracy vs precision reporting conventions'],
+    pointers: [
+      'Held-out validation; accuracy vs precision reporting conventions',
+      'Normalised iris-centre–eye-corner vectors (corner-anchored features); head-pose terms in calibration regressions',
+    ],
   },
   {
     heading: 'Accuracy, precision, and visual angle',
@@ -47,6 +57,7 @@ const THEMES: Theme[] = [
     pointers: [
       'The One Euro filter (Casiez, Roussel & Vogel, 2012)',
       'The I-VT / I-DT event-detection taxonomy (Salvucci & Goldberg, 2000)',
+      'Eye-aspect-ratio blink detection (Soukupová & Čech, 2016) and dual-threshold (hysteresis) variants',
     ],
   },
   {

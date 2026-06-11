@@ -15,7 +15,10 @@ by **leave-targets-out cross-validation** (whole dots held out, not samples — 
 leak), with `mapping_model_id` bumped to `regression-leastsquares-v2` (§3.5). The mapping remains
 a ridge-regularised linear (affine) least-squares fit; no schema columns changed. Toolchain
 recorded: React 19 / React Router 7 / Vite 8 / TypeScript 6; step demos are code-split into lazy
-chunks (§2.1, §2.8). 1.7 — **reconciled the spec with the implemented code after the revision-7 batch
+chunks (§2.1, §2.8). Two stale §9 items reconciled to what has long been implemented: the master
+control persists in `localStorage` (§2.5, from `006`), and Step 0's "pipeline diagram" is the
+static at-a-glance pipeline summary plus the shared coordinate-chain figure (no camera demo).
+1.7 — **reconciled the spec with the implemented code after the revision-7 batch
 (`057`–`078`).** Folded the previously-deferred additive fields into §4.3 — the visual-angle
 estimate group (`viewing_distance_mm`, `deg_per_norm_x/y`, `angular_scale_is_estimate`), the
 approximate head-pose mm fields (`head_tx_mm/ty_mm/tz_mm`), and the validation normalised-target
@@ -179,8 +182,8 @@ Step 0; unknown routes fall back to Step 0.
 - The control is a **single shared piece of state** for the whole site (the scaffold
   implements it with a React context). All step content must hook into this one control;
   introducing a second, independent toggle is forbidden.
-- Optional, recommended: persist the setting (e.g. `localStorage`) so it survives
-  navigation and reloads. _Persistence mechanism: open._
+- The setting persists in **`localStorage`** so it survives navigation and reloads
+  (implemented in `006`; recorded as decided in 1.8).
 
 ### 2.6 Repeated step-page contract
 
@@ -699,5 +702,3 @@ version bump):
 Tracked items deliberately left open (no constraint until decided and moved to §8):
 
 - The final, exact CSV field names (the format and conventions are now locked in §4.1).
-- Persistence mechanism for the master control setting.
-- Whether Step 0 includes a pipeline diagram demo.
