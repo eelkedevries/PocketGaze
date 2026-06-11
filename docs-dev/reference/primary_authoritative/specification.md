@@ -1,8 +1,21 @@
 # Specification
 
-**Version:** 1.7 · **Last updated:** 2026-06-06
+**Version:** 1.8 · **Last updated:** 2026-06-11
 
-**Changelog:** 1.7 — **reconciled the spec with the implemented code after the revision-7 batch
+**Changelog:** 1.8 — **recorded the tracking-robustness revision.** (a) The eye-local
+normalisation frame is now **anchored to the eye-corner landmarks** (origin at the corner
+midpoint, x along the corner-to-corner axis, y perpendicular, scaled by the corner distance,
+computed in an isotropic space): the corners do not move with blinks, so the signal is invariant
+to eyelid aperture and head roll, where the earlier eyelid-bounding-box frame was contaminated by
+both (§3.4, §7.2). (b) The calibration feature vector **adds the head-pose angles scaled by
+1/30°** (`[1, cx, cy, lx, ly, rx, ry, yaw′, pitch′, roll′]`), letting the ridge-regularised
+linear fit compensate head movement linearly; capture is **blink/quality-gated**, **per-target
+outliers are trimmed** (median-distance criterion) before fitting, and fit quality is estimated
+by **leave-targets-out cross-validation** (whole dots held out, not samples — per-sample folds
+leak), with `mapping_model_id` bumped to `regression-leastsquares-v2` (§3.5). The mapping remains
+a ridge-regularised linear (affine) least-squares fit; no schema columns changed. Toolchain
+recorded: React 19 / React Router 7 / Vite 8 / TypeScript 6; step demos are code-split into lazy
+chunks (§2.1, §2.8). 1.7 — **reconciled the spec with the implemented code after the revision-7 batch
 (`057`–`078`).** Folded the previously-deferred additive fields into §4.3 — the visual-angle
 estimate group (`viewing_distance_mm`, `deg_per_norm_x/y`, `angular_scale_is_estimate`), the
 approximate head-pose mm fields (`head_tx_mm/ty_mm/tz_mm`), and the validation normalised-target
@@ -283,7 +296,8 @@ stated here. Specific libraries are candidates until locked in §7.
 
 - **Goal:** produce the main signal — an eye-local signal, a screen-gaze signal, or both.
 - **Methods to explain:** eye-local signal estimation (iris proxy normalised within the eye
-  region); screen-gaze estimation via calibrated mapping/model; model-based inference
+  region, in a frame anchored to the eye-corner landmarks so blinks and head roll do not
+  contaminate it); screen-gaze estimation via calibrated mapping/model; model-based inference
   (e.g. WebEyeTrack) vs baseline regression (WebGazer-style) — the **implemented** screen-gaze
   layer offers **both as user-selectable providers** (default: the custom regression baseline;
   WebEyeTrack opt-in), §7.3 spike `018`/`018b`; content-mapped estimation (handed to Step 7).
@@ -305,7 +319,11 @@ stated here. Specific libraries are candidates until locked in §7.
   mapping; model personalisation; calibration-quality checks. The **implemented** mapping is a
   **ridge-regularised linear (affine) least-squares** fit (not polynomial); ridge is required
   because the combined-eye feature columns are exact averages of the per-eye columns, making the
-  design matrix rank-deficient.
+  design matrix rank-deficient. The feature vector is the eye-local coordinates (combined and
+  per-eye) **plus the head-pose angles scaled by 1/30°**, so the fit can compensate head
+  movement linearly (near-zero coefficients when the head stays still). Capture is
+  **blink/quality-gated**; **per-target outliers are trimmed** before fitting; fit quality is
+  estimated by **leave-targets-out cross-validation** (whole dots held out, never just samples).
 - **Live demo:** a **follow-the-dots** task at known screen positions, then a fitted
   mapping and a simple validation/error readout.
 - **Implementation details panels:** calibration samples (target vs estimate); the fitted
@@ -459,7 +477,8 @@ These conceptual rules are binding for all content and all implementation:
 ### 7.2 Glossary (binding terminology)
 
 - **Eye-local signal** — iris/pupil-proxy movement normalised within the detected eye
-  region; calibration-light; **not** screen gaze.
+  region (in a frame anchored to the eye-corner landmarks); calibration-light; **not**
+  screen gaze.
 - **Screen-gaze estimate** — estimated screen x/y from a calibrated mapping or trained
   model; requires calibration and validation.
 - **Content-mapped coordinate** — a screen-gaze coordinate transformed into content/

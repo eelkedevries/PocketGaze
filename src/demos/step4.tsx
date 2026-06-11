@@ -249,6 +249,7 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
       ? provider.estimate({
           timeMs: ts,
           eyeLocal,
+          headPose: features?.headPose ?? null,
           frame,
           viewport: { width: video.clientWidth, height: video.clientHeight },
         })

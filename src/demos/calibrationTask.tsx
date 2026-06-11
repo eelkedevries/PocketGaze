@@ -6,7 +6,7 @@ import {
   type CalibrationDot,
   type PlacedDot,
 } from '../lib/calibrationLayout';
-import { gazeFeatures } from '../lib/regressionGaze';
+import { gazeFeatures, type HeadPoseAngles } from '../lib/regressionGaze';
 import type { GazeCalibrationSample } from '../lib/gazeCalibration';
 import type { EyeLocalSignal } from '../lib/eyeLocalSignal';
 import type { SessionStore } from '../lib/sessionStore';
@@ -14,23 +14,41 @@ import type { SessionStore } from '../lib/sessionStore';
 // Follow-the-dots calibration task (specification §3.5, §6.2, §2.8).
 //
 // Presents targets at known positions with safe margins and phone-suitable
-// sizes, and captures the concurrent eye-local signal at each. It writes
+// sizes, and captures the concurrent eye-local signal (plus head pose) at
+// each. Capture is QUALITY-GATED: frames during blinks or with low signal
+// quality are skipped, so they never contaminate the fit; a tick budget per
+// dot keeps the task moving even when quality stays poor. It writes
 // `calibration` rows (target in CSS px AND normalised, plus the eye-local
 // signal) and `calibration_target` events to the shared session model, and
 // hands the collected (features → target) pairs to `onComplete` for the fit
 // (`022`). It does not fit the mapping itself (that is `022`/`023`).
 
 const SETTLE_MS = 700;
-const SAMPLE_INTERVAL_MS = 90;
-const SAMPLES_PER_DOT = 6;
+const SAMPLE_INTERVAL_MS = 70;
+/** Valid samples wanted per dot. More samples per target make the per-target
+ *  outlier trimming and the least-squares fit meaningfully more robust. */
+const SAMPLES_PER_DOT = 12;
+/** Capture attempts allowed per dot before moving on with what was caught. */
+const MAX_TICKS_PER_DOT = 24;
+/** Eye-local signal quality below which a capture frame is skipped. */
+const MIN_CAPTURE_QUALITY = 0.4;
 
 type Phase = 'settle' | 'capture';
 type Status = 'idle' | 'running' | 'done';
 
+/** Per-frame inputs the task samples from the host demo's camera loop. */
+export interface CalibrationCapture {
+  signal: EyeLocalSignal;
+  /** Head-pose angles for the same frame (folded into the features), or null. */
+  headPose: HeadPoseAngles | null;
+  /** False during a blink — such frames are skipped. */
+  eyesOpen: boolean;
+}
+
 interface CalibrationTaskProps {
   store: SessionStore;
-  /** Latest eye-local signal from the host's camera loop (null when no face). */
-  getSignal: () => EyeLocalSignal | null;
+  /** Latest capture inputs from the host's camera loop (null when no face). */
+  getCapture: () => CalibrationCapture | null;
   /** Receives the collected feature→target pairs when the sequence completes. */
   onComplete: (samples: GazeCalibrationSample[]) => void;
   /** Called when the user stops the task before completion. */
@@ -40,7 +58,7 @@ interface CalibrationTaskProps {
 
 export default function CalibrationTask({
   store,
-  getSignal,
+  getCapture,
   onComplete,
   onCancel,
   dots = DEFAULT_CALIBRATION_DOTS,
@@ -105,13 +123,18 @@ export default function CalibrationTask({
       return () => clearTimer();
     }
 
-    // capture phase: take a few samples, then advance.
+    // capture phase: take quality-gated samples, then advance. Blink frames
+    // and low-quality detections are skipped rather than recorded; the tick
+    // budget ensures a dot never blocks the sequence when quality stays poor.
     let taken = 0;
+    let ticks = 0;
     const tick = () => {
-      const signal = getSignal();
-      if (signal) {
+      const capture = getCapture();
+      ticks += 1;
+      if (capture && capture.eyesOpen && capture.signal.quality >= MIN_CAPTURE_QUALITY) {
+        const { signal, headPose } = capture;
         samplesRef.current.push({
-          features: gazeFeatures(signal),
+          features: gazeFeatures(signal, headPose),
           target: { x: dot.nx, y: dot.ny },
         });
         store.addCalibration({
@@ -129,9 +152,9 @@ export default function CalibrationTask({
           combined_eye_y: signal.combined.y,
           signal_type: 'eye_local',
         });
+        taken += 1;
       }
-      taken += 1;
-      if (taken >= SAMPLES_PER_DOT) {
+      if (taken >= SAMPLES_PER_DOT || ticks >= MAX_TICKS_PER_DOT) {
         setPhase('settle');
         setIndex((i) => i + 1);
       } else {
@@ -140,7 +163,7 @@ export default function CalibrationTask({
     };
     timerRef.current = setTimeout(tick, SAMPLE_INTERVAL_MS);
     return () => clearTimer();
-  }, [status, index, phase, placed, store, getSignal, finish, clearTimer]);
+  }, [status, index, phase, placed, store, getCapture, finish, clearTimer]);
 
   const start = useCallback(() => {
     const el = stageRef.current;

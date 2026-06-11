@@ -11,8 +11,11 @@
 
 import type { LinearGazeMapping } from './regressionGaze';
 
-/** Stable id recorded as `mapping_model_id` in the session model (§4). */
-export const REGRESSION_MAPPING_MODEL_ID = 'regression-leastsquares-v1';
+/** Stable id recorded as `mapping_model_id` in the session model (§4).
+ *  v2: the feature vector gained scaled head-pose angles (`gazeFeatures`),
+ *  capture is blink/quality-gated with per-target outlier trimming, and fit
+ *  quality is estimated by leave-targets-out cross-validation. */
+export const REGRESSION_MAPPING_MODEL_ID = 'regression-leastsquares-v2';
 
 /** A calibration observation: a feature vector paired with its known target. */
 export interface GazeCalibrationSample {
@@ -137,12 +140,30 @@ function classify(rms: number, t: GazeCalibrationThresholds): CalibrationQuality
   return 'poor';
 }
 
+/** Group sample indices by identical target, preserving first-seen order. */
+function groupByTarget(samples: GazeCalibrationSample[]): number[][] {
+  const groups = new Map<string, number[]>();
+  samples.forEach((s, i) => {
+    const key = `${s.target.x},${s.target.y}`;
+    const g = groups.get(key);
+    if (g) g.push(i);
+    else groups.set(key, [i]);
+  });
+  return [...groups.values()];
+}
+
 /**
  * Fit a calibration mapping and estimate its quality.
  *
- * Quality is estimated by deterministic k-fold cross-validation (folds assigned
- * by index, so the result is reproducible). With too few samples for folding,
- * the training-set RMS is used and a recalibration is suggested.
+ * Quality is estimated by deterministic LEAVE-TARGETS-OUT cross-validation:
+ * folds are assigned per calibration target (not per sample), so every test
+ * sample belongs to a dot the fold's fit never saw. Per-sample folding would
+ * leak — each dot's remaining samples sit in the training set, so the model
+ * is only asked to reproduce a dot it has effectively memorised — and read
+ * optimistically; per-target folding reports interpolation to unseen screen
+ * positions, which is what the mapping is for. With too few samples or only
+ * one distinct target, the training-set RMS is used and a recalibration is
+ * suggested.
  */
 export function fitGazeMapping(
   samples: GazeCalibrationSample[],
@@ -156,28 +177,43 @@ export function fitGazeMapping(
 
   const mapping = fitMapping(samples, ridge);
 
-  // Cross-validate when there are enough points to hold some out.
-  const folds = Math.min(options.folds ?? 5, n);
-  let rmsX: number;
-  let rmsY: number;
-  const tooFew = n < featureLen + 1 || folds < 2;
-  if (tooFew) {
-    ({ rmsX, rmsY } = axisRms(samples, mapping));
-  } else {
+  // Cross-validate per target when there are enough targets to hold some out.
+  const groups = groupByTarget(samples);
+  const folds = Math.min(options.folds ?? groups.length, groups.length);
+  let rmsX = 0;
+  let rmsY = 0;
+  let tooFew = n < featureLen + 1 || folds < 2;
+  if (!tooFew) {
+    const foldOfSample = new Array<number>(n);
+    groups.forEach((indices, g) => {
+      for (const i of indices) foldOfSample[i] = g % folds;
+    });
     let sx = 0;
     let sy = 0;
+    let evaluated = 0;
     for (let fold = 0; fold < folds; fold++) {
-      const train = samples.filter((_, i) => i % folds !== fold);
-      const test = samples.filter((_, i) => i % folds === fold);
+      const train = samples.filter((_, i) => foldOfSample[i] !== fold);
+      const test = samples.filter((_, i) => foldOfSample[i] === fold);
+      // A fold whose training set is smaller than the feature count cannot be
+      // fitted meaningfully; skip it rather than report a fantasy error.
       if (train.length < featureLen || test.length === 0) continue;
       const foldMapping = fitMapping(train, ridge);
       for (const s of test) {
         sx += (dot(foldMapping.cx, s.features) - s.target.x) ** 2;
         sy += (dot(foldMapping.cy, s.features) - s.target.y) ** 2;
       }
+      evaluated += test.length;
     }
-    rmsX = Math.sqrt(sx / n);
-    rmsY = Math.sqrt(sy / n);
+    if (evaluated === 0) {
+      // Every fold was skipped — there is no held-out evidence at all.
+      tooFew = true;
+    } else {
+      rmsX = Math.sqrt(sx / evaluated);
+      rmsY = Math.sqrt(sy / evaluated);
+    }
+  }
+  if (tooFew) {
+    ({ rmsX, rmsY } = axisRms(samples, mapping));
   }
 
   const rmsError = Math.sqrt(rmsX * rmsX + rmsY * rmsY);
@@ -192,4 +228,81 @@ export function fitGazeMapping(
     recalibrationSuggested: quality === 'poor' || tooFew,
     sampleCount: n,
   };
+}
+
+// --- Per-target outlier trimming ---------------------------------------------
+
+export interface TrimOptions {
+  /** Multiplier on the per-target median absolute deviation. */
+  madFactor?: number;
+  /** Deviation floor (eye-local units) below which samples are never dropped. */
+  minRadius?: number;
+}
+
+/** Documented defaults: generous, so only clear outliers are removed. */
+export const DEFAULT_TRIM_OPTIONS: Required<TrimOptions> = {
+  madFactor: 3,
+  minRadius: 0.08,
+};
+
+export interface TrimResult {
+  kept: GazeCalibrationSample[];
+  rejectedCount: number;
+}
+
+// The eye-coordinate slice of the `gazeFeatures` vector (indices 1-6:
+// combined and per-eye x/y). Outliers show up here — a glance away, a missed
+// blink, a landmark glitch — not in the bias or head-pose terms.
+const EYE_FEATURE_START = 1;
+const EYE_FEATURE_END = 7;
+
+function median(values: number[]): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Remove per-target outlier samples before fitting: within each target's
+ * samples, compute the component-wise median of the eye-coordinate features
+ * and drop samples whose distance from it exceeds
+ * `max(minRadius, madFactor x median distance)`. A glance away from the dot,
+ * an undetected blink, or a landmark glitch otherwise drags the least-squares
+ * fit; the median centre is robust to exactly those samples.
+ *
+ * Conservative by construction: targets with fewer than 4 samples are kept
+ * whole, and if trimming would leave fewer than 2 samples for a target, that
+ * target is kept whole instead. Order is preserved.
+ */
+export function trimCalibrationSamples(
+  samples: GazeCalibrationSample[],
+  options: TrimOptions = {},
+): TrimResult {
+  const { madFactor, minRadius } = { ...DEFAULT_TRIM_OPTIONS, ...options };
+  const keep = new Array<boolean>(samples.length).fill(true);
+
+  for (const indices of groupByTarget(samples)) {
+    if (indices.length < 4) continue;
+    const centre: number[] = [];
+    for (let d = EYE_FEATURE_START; d < EYE_FEATURE_END; d++) {
+      centre.push(median(indices.map((i) => samples[i].features[d] ?? 0)));
+    }
+    const dists = indices.map((i) => {
+      let sum = 0;
+      for (let d = EYE_FEATURE_START; d < EYE_FEATURE_END; d++) {
+        const diff = (samples[i].features[d] ?? 0) - centre[d - EYE_FEATURE_START];
+        sum += diff * diff;
+      }
+      return Math.sqrt(sum);
+    });
+    const threshold = Math.max(minRadius, madFactor * median(dists));
+    const flags = dists.map((dist) => dist <= threshold);
+    if (flags.filter(Boolean).length < 2) continue; // safety: keep the target whole
+    indices.forEach((sampleIndex, j) => {
+      if (!flags[j]) keep[sampleIndex] = false;
+    });
+  }
+
+  const kept = samples.filter((_, i) => keep[i]);
+  return { kept, rejectedCount: samples.length - kept.length };
 }

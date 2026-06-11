@@ -26,6 +26,12 @@ export interface ScreenGazeInput {
   /** The eye-local signal for this frame (`017`), when available. */
   eyeLocal?: EyeLocalSignal | null;
   /**
+   * Head-pose angles (degrees) for this frame, when available. The regression
+   * provider folds them into its feature vector so the fitted mapping can
+   * compensate head-pose changes; image-based providers may ignore them.
+   */
+  headPose?: { yaw: number; pitch: number; roll: number } | null;
+  /**
    * The current video frame, for image-based providers (e.g. WebEyeTrack, `019b`).
    * Typed `unknown` so this shared module stays DOM-free and unit-testable; the
    * image-based provider narrows it (e.g. to a `CanvasImageSource`).

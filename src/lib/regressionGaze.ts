@@ -11,12 +11,36 @@
 import type { EyeLocalSignal } from './eyeLocalSignal';
 import type { ScreenGazeProvider, ScreenGazeInput, ScreenGazeEstimate } from './screenGaze';
 
+/** The head-pose angles consumed by the gaze features (degrees). */
+export interface HeadPoseAngles {
+  yaw: number;
+  pitch: number;
+  roll: number;
+}
+
 /**
- * Feature vector fed to the linear mapping. A bias term plus the combined and
- * per-eye eye-local coordinates: `[1, cx, cy, lx, ly, rx, ry]`. Keeping the bias
- * first lets a mapping encode a constant offset.
+ * Scale (degrees) that maps head-pose angles into roughly [-1, 1] so they sit
+ * on the same footing as the eye-local features under one ridge term.
  */
-export function gazeFeatures(eyeLocal: EyeLocalSignal): number[] {
+export const HEAD_ANGLE_SCALE_DEG = 30;
+
+/**
+ * Feature vector fed to the linear mapping. A bias term, the combined and
+ * per-eye eye-local coordinates, and the scaled head-pose angles:
+ * `[1, cx, cy, lx, ly, rx, ry, yaw', pitch', roll']`. Keeping the bias first
+ * lets a mapping encode a constant offset.
+ *
+ * The head-pose terms matter because the iris-in-eye position alone is
+ * ambiguous: turning the head while fixating one point shifts the eye-local
+ * signal exactly like a gaze shift would. Including the (scaled) angles lets
+ * the fitted mapping compensate linearly for the head poses seen during
+ * calibration — the standard practice in landmark-based webcam gaze
+ * estimation. With little head movement in the calibration set, the ridge
+ * term keeps these coefficients near zero, so the features degrade
+ * gracefully instead of overfitting. When no head pose is available the
+ * terms are zero (neutral pose).
+ */
+export function gazeFeatures(eyeLocal: EyeLocalSignal, headPose?: HeadPoseAngles | null): number[] {
   return [
     1,
     eyeLocal.combined.x,
@@ -25,11 +49,14 @@ export function gazeFeatures(eyeLocal: EyeLocalSignal): number[] {
     eyeLocal.left.y,
     eyeLocal.right.x,
     eyeLocal.right.y,
+    (headPose?.yaw ?? 0) / HEAD_ANGLE_SCALE_DEG,
+    (headPose?.pitch ?? 0) / HEAD_ANGLE_SCALE_DEG,
+    (headPose?.roll ?? 0) / HEAD_ANGLE_SCALE_DEG,
   ];
 }
 
-/** Number of features produced by `gazeFeatures` (bias + 3 × {x,y}). */
-export const GAZE_FEATURE_LENGTH = 7;
+/** Number of features produced by `gazeFeatures` (bias + 3 × {x,y} + 3 angles). */
+export const GAZE_FEATURE_LENGTH = 10;
 
 /**
  * A fitted linear mapping: one coefficient vector per output axis. Each vector
@@ -93,7 +120,10 @@ export class RegressionGazeProvider implements ScreenGazeProvider {
     if (!this.mapping || !input.eyeLocal) {
       return { gaze_available: false };
     }
-    const { x, y } = applyMapping(this.mapping, gazeFeatures(input.eyeLocal));
+    // Pass the head pose through so estimation matches the calibration-time
+    // feature construction (a mapping fitted with head-pose terms must see
+    // them here too, or the learned compensation would read as a bias).
+    const { x, y } = applyMapping(this.mapping, gazeFeatures(input.eyeLocal, input.headPose));
     return {
       gaze_x: clamp01(x),
       gaze_y: clamp01(y),

@@ -10,15 +10,16 @@ import {
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
 import ExportButton from '../components/ExportButton';
-import CalibrationTask from './calibrationTask';
+import CalibrationTask, { type CalibrationCapture } from './calibrationTask';
 import ValidationTask from './validationTask';
 import PursuitTask from './pursuitTask';
 import GazeContingentTask from './gazeContingentTask';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
 import { eyeLocalSignalFromFeatures, type EyeLocalSignal } from '../lib/eyeLocalSignal';
-import { RegressionGazeProvider, applyMapping } from '../lib/regressionGaze';
+import { RegressionGazeProvider, applyMapping, GAZE_FEATURE_LENGTH } from '../lib/regressionGaze';
 import {
   fitGazeMapping,
+  trimCalibrationSamples,
   type GazeCalibrationResult,
   type GazeCalibrationSample,
 } from '../lib/gazeCalibration';
@@ -63,11 +64,13 @@ interface Step5DemoContextValue {
   store: SessionStore;
   state: DemoState;
   errorMessage: string | null;
-  getSignal: () => EyeLocalSignal | null;
+  getCapture: () => CalibrationCapture | null;
   /** Latest fitted screen-gaze estimate, for the held-out validation task (035). */
   getEstimate: () => ScreenGazeEstimate;
   result: GazeCalibrationResult | null;
   samples: GazeCalibrationSample[];
+  /** Samples dropped by the per-target outlier trimming before the fit. */
+  rejectedCount: number;
   gaze: ScreenGazeEstimate;
   validation: ValidationResult | null;
   onValidationComplete: () => void;
@@ -110,13 +113,14 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
   const runningRef = useRef(false);
   const lastUiUpdateRef = useRef(0);
   const frameCountRef = useRef(0);
-  const signalRef = useRef<EyeLocalSignal | null>(null);
+  const captureRef = useRef<CalibrationCapture | null>(null);
   const estimateRef = useRef<ScreenGazeEstimate>({ gaze_available: false });
 
   const [state, setState] = useState<DemoState>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [result, setResult] = useState<GazeCalibrationResult | null>(null);
   const [samples, setSamples] = useState<GazeCalibrationSample[]>([]);
+  const [rejectedCount, setRejectedCount] = useState(0);
   const [gaze, setGaze] = useState<ScreenGazeEstimate>({ gaze_available: false });
   const [validation, setValidation] = useState<ValidationResult | null>(null);
   const [pointsUsed, setPointsUsed] = useState<number | 'all'>('all');
@@ -146,9 +150,20 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
     const signal: EyeLocalSignal | null = features
       ? eyeLocalSignalFromFeatures(features, imageAspect)
       : null;
-    signalRef.current = signal;
+    captureRef.current =
+      features && signal
+        ? {
+            signal,
+            headPose: features.headPose,
+            eyesOpen: features.leftEye.isOpen && features.rightEye.isOpen,
+          }
+        : null;
 
-    const estimate = provider.estimate({ timeMs: ts, eyeLocal: signal });
+    const estimate = provider.estimate({
+      timeMs: ts,
+      eyeLocal: signal,
+      headPose: features?.headPose ?? null,
+    });
     estimateRef.current = estimate;
 
     if (ts - lastUiUpdateRef.current >= 100) {
@@ -186,7 +201,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       store.clear();
       frameCountRef.current = 0;
       lastUiUpdateRef.current = 0;
-      signalRef.current = null;
+      captureRef.current = null;
       setValidation(null);
       setState('loading');
       setErrorMessage(null);
@@ -213,18 +228,23 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
     (collected: GazeCalibrationSample[]) => {
       if (collected.length === 0) {
         setErrorMessage(
-          'No calibration samples were captured — make sure the camera is running and your face is tracked, then recalibrate.',
+          'No calibration samples were captured — make sure the camera is running, your face is tracked, and your eyes stay open on each dot, then recalibrate.',
         );
         setResult(null);
         setSamples([]);
+        setRejectedCount(0);
         provider.setMapping(null);
         return;
       }
       setErrorMessage(null);
-      const fitted = fitGazeMapping(collected);
+      // Robust fit: drop per-target outliers (glances away, missed blinks,
+      // landmark glitches) before the least-squares fit sees them.
+      const { kept, rejectedCount: rejected } = trimCalibrationSamples(collected);
+      const fitted = fitGazeMapping(kept);
       provider.setMapping(fitted.mapping);
       setResult(fitted);
-      setSamples(collected);
+      setSamples(kept);
+      setRejectedCount(rejected);
       setPointsUsed('all');
       // A fresh calibration invalidates any previous validation result.
       setValidation(null);
@@ -265,6 +285,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
     provider.setMapping(null);
     setResult(null);
     setSamples([]);
+    setRejectedCount(0);
     setGaze({ gaze_available: false });
     setValidation(null);
   }, [provider]);
@@ -285,7 +306,7 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
     });
   }, [store]);
 
-  const getSignal = useCallback(() => signalRef.current, []);
+  const getCapture = useCallback(() => captureRef.current, []);
   const getEstimate = useCallback(() => estimateRef.current, []);
 
   const onVideoElement = useCallback((video: HTMLVideoElement | null) => {
@@ -305,10 +326,11 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       store,
       state,
       errorMessage,
-      getSignal,
+      getCapture,
       getEstimate,
       result,
       samples,
+      rejectedCount,
       gaze,
       validation,
       onValidationComplete,
@@ -324,10 +346,11 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
       store,
       state,
       errorMessage,
-      getSignal,
+      getCapture,
       getEstimate,
       result,
       samples,
+      rejectedCount,
       gaze,
       validation,
       onValidationComplete,
@@ -380,7 +403,7 @@ function Step5LiveDemo() {
   const {
     state,
     errorMessage,
-    getSignal,
+    getCapture,
     getEstimate,
     store,
     result,
@@ -417,7 +440,7 @@ function Step5LiveDemo() {
       {cameraReady && (
         <CalibrationTask
           store={store}
-          getSignal={getSignal}
+          getCapture={getCapture}
           onComplete={onCalibrationComplete}
           onCancel={onCalibrationCancel}
         />
@@ -536,10 +559,13 @@ const WARP_MARGIN = 20;
 function CalibrationWarpGrid({ mapping }: { mapping: GazeCalibrationResult['mapping'] }) {
   const side = WARP_SIZE + 2 * WARP_MARGIN;
   const axis = Array.from({ length: WARP_GRID }, (_, i) => -1 + (2 * i) / (WARP_GRID - 1));
-  // node[row][col] = screen position for eye-local (cx, cy).
+  // node[row][col] = screen position for eye-local (cx, cy), evaluated at a
+  // neutral head pose (the trailing head-angle features padded with zeros).
   const nodes = axis.map((cy) =>
     axis.map((cx) => {
-      const p = applyMapping(mapping, [1, cx, cy, cx, cy, cx, cy]);
+      const features = [1, cx, cy, cx, cy, cx, cy];
+      while (features.length < GAZE_FEATURE_LENGTH) features.push(0);
+      const p = applyMapping(mapping, features);
       return { x: WARP_MARGIN + p.x * WARP_SIZE, y: WARP_MARGIN + p.y * WARP_SIZE };
     }),
   );
@@ -813,7 +839,7 @@ function ValidationErrorMap({ validation }: { validation: ValidationResult }) {
 // --- Subprocess panels ------------------------------------------------------
 
 function Step5DetailsPanels() {
-  const { result, samples, validation, store } = useStep5Demo();
+  const { result, samples, rejectedCount, validation, store } = useStep5Demo();
 
   if (!result) {
     return (
@@ -907,7 +933,13 @@ function Step5DetailsPanels() {
         <h3 className="panel__title">Calibration quality</h3>
         <ul className="panel__list">
           <li>
-            Samples: <strong>{result.sampleCount}</strong>
+            Samples used: <strong>{result.sampleCount}</strong>
+            {rejectedCount > 0 && (
+              <>
+                {' '}
+                (<strong>{rejectedCount}</strong> rejected as per-target outliers)
+              </>
+            )}
           </li>
           <li>
             RMS error (x / y): <strong>{fmt(result.rmsX, 3)} / {fmt(result.rmsY, 3)}</strong>{' '}
@@ -922,9 +954,11 @@ function Step5DetailsPanels() {
           </li>
         </ul>
         <p className="panel__note">
-          Error is estimated by k-fold cross-validation on held-out targets, in normalised screen
-          units. Thresholds are documented defaults, not device-calibrated — do not read these as
-          measured accuracy (§6.3).
+          Capture skips blink and low-quality frames, and samples far from their target&rsquo;s
+          median eye position are trimmed before fitting. Error is then estimated by
+          leave-targets-out cross-validation — each fold holds out whole dots the fit never saw —
+          in normalised screen units. Thresholds are documented defaults, not device-calibrated —
+          do not read these as measured accuracy (§6.3).
         </p>
       </section>
 
@@ -961,8 +995,12 @@ function Step5DetailsPanels() {
       <section className="panel">
         <h3 className="panel__title">Fitted mapping</h3>
         <p className="panel__note">
-          Model: <code>{result.mappingModelId}</code>. A linear least-squares map from the
-          eye-local feature vector <code>[1, cx, cy, lx, ly, rx, ry]</code> to screen x/y.
+          Model: <code>{result.mappingModelId}</code>. A ridge-regularised linear least-squares
+          map from the feature vector{' '}
+          <code>[1, cx, cy, lx, ly, rx, ry, yaw&prime;, pitch&prime;, roll&prime;]</code> — the
+          combined and per-eye eye-local coordinates plus the head-pose angles scaled by
+          1/30&deg; — to screen x/y. The head-pose terms let the fit compensate linearly for the
+          head poses seen during calibration; with a still head they stay near zero.
         </p>
         <div className="panel__table-wrap">
           <table className="panel__table">
