@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router';
 import Layout from './components/Layout';
 import AboutPage from './components/AboutPage';
 import StepPage from './components/StepPage';

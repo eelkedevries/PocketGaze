@@ -12,7 +12,7 @@ gap is work still to be done.
 - **Static site scaffold** — React + TypeScript + Vite. Builds to `dist/`, base path
   `/PocketGaze/`.
 - **Top navigation across Step 0–7** — Step 0 (Overview) through Step 7 (Content and
-  stimulus mapping), routed with `react-router-dom` (`HashRouter` for GitHub Pages).
+  stimulus mapping), routed with `react-router` v7 (`HashRouter` for GitHub Pages).
 - **Shared step-page structure** — every step uses the same sections: introduction,
   options/methods, implementation on this page, live demo area, optional
   implementation/subprocess area, outputs, limitations.
