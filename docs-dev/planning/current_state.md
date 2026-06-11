@@ -315,6 +315,43 @@ Outstanding items are human-run tasks:
   with the master control (no second global toggle). §2.6 section order preserved; expanders are
   native, keyboard-accessible. Content/model addition only.
 
+## Tracking-robustness and modernisation batch (2026-06-11, conventional commits)
+
+An external-driver batch (conventional-commit prefixes, not numbered prompts) that
+modernised the toolchain and materially improved tracking quality. Spec reconciled to
+**v1.8**. Summary:
+
+- **Toolchain:** React 18→19.2, `react-router-dom` 6 → `react-router` 7, Vite 5→8
+  (Rolldown; ~8× faster builds), TypeScript 5.9→6.0, matching `@types`. No runtime API
+  changes were needed. `@mediapipe/tasks-vision` 0.10.35 and `webeyetrack` 0.0.2 confirmed
+  current.
+- **Performance:** per-step demos are code-split via `React.lazy` (registry returns lazy
+  components; `StepPage` adds `Suspense`), so MediaPipe and demo code load only on the
+  step that needs them — initial bundle 532→~300 kB with chunks per step. The camera now
+  requests best-effort 1280×720@30 for more pixels per eye region.
+- **Eye-local signal (corner frame):** normalisation re-anchored from the eyelid bounding
+  box to the eye-corner landmarks (origin at the corner midpoint, x along the corner axis,
+  y perpendicular, scale = corner distance, isotropic space) — invariant to blinks/squints
+  and head roll; `eyeLocalSignalFromFeatures` replaces the duplicated region construction
+  in the Step 4/5/6 demos; the Step 2 crop draws the corner frame.
+- **Calibration (regression-leastsquares-v2):** features extended with head-pose angles
+  scaled by 1/30° (`[1, cx, cy, lx, ly, rx, ry, yaw′, pitch′, roll′]`); capture is
+  blink/quality-gated (12 valid samples per dot, 70 ms spacing, tick budget); per-target
+  outliers trimmed (median-distance, `trimCalibrationSamples`); fit quality estimated by
+  **leave-targets-out** cross-validation (per-sample folds leaked); fold-starvation falls
+  back to training RMS + recalibration suggestion.
+- **Blink robustness:** per-eye hysteresis (`EyelidStateTracker`, close < 0.18, reopen
+  > 0.24) replaces the single 0.2 threshold in the live extractor; Step 2's EAR trace
+  shows both thresholds.
+- **Events:** `minSaccadeAmplitude` (default 0.03) folds out-and-back landmark spikes
+  back into the surrounding fixation (real saccades land somewhere new); exposed in the
+  event lab. Invalid gaps still break runs.
+- **Validation:** the held-out task skips blink frames and counts valid samples under a
+  tick budget. One Euro default beta 0.007→0.03 (gaze-tuned; slider range widened).
+- **Shell/content:** per-page document titles, brand links home, About links the repo,
+  richer meta tags; README/docs updated (incl. an eye-local-vs-gaze terminology fix in
+  `docs/usage.md`).
+
 ## Revision-7 reconciliation (prompts 057–078)
 
 External-driver batch folded into the numbered queue. Audit-first: `057` recorded verified

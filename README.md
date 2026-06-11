@@ -28,12 +28,12 @@ placeholders remain.
 | Step | What the demo does |
 |------|-------------------|
 | Step 1 | Camera capture with per-frame timing (rVFC/rAF), live FPS and latency readout |
-| Step 2 | Face-landmark and eye-feature overlay in real time (MediaPipe FaceLandmarker) |
+| Step 2 | Face-landmark and eye-feature overlay in real time (MediaPipe FaceLandmarker), zoomed eye crop, live EAR trace |
 | Step 3 | Head-pose estimation (yaw/pitch/roll) and head-motion quality labelling |
-| Step 4 | Eye-local gaze signal extraction, One Euro filtering, per-provider comparison |
-| Step 5 | Calibration: 9-point capture, ridge-regularised linear regression, residual visualisation |
-| Step 6 | Signal filtering and event detection: filtered vs raw trace, blink shading, candidate fixations and saccades |
-| Step 7 | Content-coordinate mapping: pointer-driven scrollable/zoomable panel showing screen vs content coordinates |
+| Step 4 | Eye-local signal trace (corner-anchored, not screen gaze) plus an optional screen-gaze estimate from a selectable provider |
+| Step 5 | Calibration: 9-point quality-gated capture, ridge-regularised linear regression with head-pose features, held-out validation with an accuracy/precision error map |
+| Step 6 | Signal filtering and event detection: filtered vs raw trace, blink shading, candidate fixations and saccades, synthetic event lab |
+| Step 7 | Content-coordinate mapping: pointer-driven scrollable/zoomable panel showing screen vs content coordinates, AOI dwell tasks |
 
 All processing happens locally in the browser — no camera frames are uploaded or stored.
 
@@ -52,7 +52,9 @@ entirely local.
 
 ## Tech stack
 
-React + TypeScript + Vite.
+React 19 + TypeScript + Vite 8, with `@mediapipe/tasks-vision` (self-hosted model and
+WASM) for face/eye/iris features. Step demos are code-split into lazy chunks so the
+initial load stays light on phones.
 
 ## Install, run, and build locally
 
@@ -70,10 +72,12 @@ Start the local development server:
 npm run dev
 ```
 
-Type-check (the verify command):
+Type-check and run the unit tests (pure pipeline logic is tested with Node's built-in
+runner):
 
 ```bash
 npm run check
+npm run test
 ```
 
 Build the production site and preview it:

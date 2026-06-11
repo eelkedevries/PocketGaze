@@ -31,10 +31,14 @@ Each step page has a working live demo:
   eye-region boxes, and iris-proxy markers over the video preview in real time.
 - **Step 3** — Head-pose angles (yaw/pitch/roll) and head-motion quality labels are
   derived from the MediaPipe facial transformation matrix and shown live.
-- **Step 4** — Eye-local gaze signals are computed and filtered. A provider selector
-  lets you compare the custom regression signal against the optional WebEyeTrack provider.
-- **Step 5** — A 9-point calibration sequence collects fixations; a ridge-regularised
-  linear-regression model is fitted and residuals are visualised on a grid.
+- **Step 4** — The eye-local signal (iris position within a corner-anchored eye frame —
+  not screen gaze) is traced live. A provider selector lets you compare the custom
+  regression screen-gaze estimate against the optional WebEyeTrack provider.
+- **Step 5** — A 9-point calibration sequence collects quality-gated samples (blink and
+  low-quality frames are skipped, per-target outliers trimmed); a ridge-regularised
+  linear-regression mapping with head-pose features is fitted, visualised as a warped
+  grid, and then measured on held-out validation targets with an accuracy/precision
+  error map.
 - **Step 6** — A scrolling canvas shows the raw vs One Euro–filtered eye-local signal,
   with blue shading for blinks and red for tracking loss. Candidate fixation and saccade
   events are listed in real time.
@@ -58,11 +62,13 @@ parameters, quality thresholds, event-detection logic, coordinate transforms, an
 
 ## Exporting session data
 
-The **Export session data** panel (Step 1 → Show implementation details → Export session
-data) downloads a combined CSV of all rows accumulated during the current session:
-sample rows, event rows, calibration rows, stimulus rows, and quality rows. Raw and
-filtered signals occupy separate columns; non-applicable fields are blank (not zero).
-The file is saved to your machine; nothing is uploaded.
+Every data-producing step (Steps 1, 5, 6, and 7) exposes an **Export session data**
+panel under the master *Show implementation details* control. It downloads a combined
+CSV of the rows accumulated during the current session: sample rows, event rows,
+calibration rows, stimulus rows, and quality rows. Raw and filtered signals occupy
+separate columns; non-applicable fields are blank (not zero). Only derived data is
+exported — never raw video frames or raw landmarks. The file is saved to your machine;
+nothing is uploaded.
 
 ## Build
 
