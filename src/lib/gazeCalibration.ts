@@ -1,10 +1,12 @@
 // Calibration regression fit for screen gaze (specification §3.5, §6.3).
 //
-// Fits a transparent linear least-squares mapping from the eye-local feature
-// vector (`regressionGaze.ts`) to normalised screen coordinates, using the
-// calibration samples collected by the follow-the-dots task (`021`). It also
-// estimates calibration quality by k-fold cross-validation and flags poor
-// calibrations so the UI can prompt a recalibration (§6.3 — do not overclaim).
+// Fits a transparent linear least-squares mapping from the gaze feature
+// vector (`regressionGaze.ts` — eye-local coordinates plus scaled head-pose
+// angles) to normalised screen coordinates, using the calibration samples
+// collected by the follow-the-dots task (`021`). It also trims per-target
+// outliers, estimates calibration quality by leave-targets-out
+// cross-validation, and flags poor calibrations so the UI can prompt a
+// recalibration (§6.3 — do not overclaim).
 //
 // Pure and deterministic (no DOM, no RNG), so it is fully unit-testable. The
 // fitted `LinearGazeMapping` plugs straight into `RegressionGazeProvider.setMapping`.
