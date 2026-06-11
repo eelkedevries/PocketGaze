@@ -13,6 +13,7 @@ import { FaceFeatureExtractor } from '../lib/featureExtraction';
 import { eyeLocalSignalFromFeatures } from '../lib/eyeLocalSignal';
 import { SignalFilterSet, DEFAULT_ONE_EURO_PARAMS } from '../lib/oneEuroFilter';
 import { SampleSuppressor, DEFAULT_SUPPRESSION_THRESHOLDS } from '../lib/suppression';
+import { HeadMotionLabeller } from '../lib/motionQuality';
 import {
   detectEvents,
   sampleSpeedPerSec,
@@ -100,6 +101,12 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
   const suppressorRef = useRef<SampleSuppressor | null>(null);
   if (suppressorRef.current === null) suppressorRef.current = new SampleSuppressor();
 
+  // Real head-motion labelling (015): rotational speed + pose quality, not a
+  // quality-only shortcut, so head turns during this demo genuinely downgrade
+  // event labels (saccade_during_head_movement / uncertain_head_motion).
+  const headLabellerRef = useRef<HeadMotionLabeller | null>(null);
+  if (headLabellerRef.current === null) headLabellerRef.current = new HeadMotionLabeller();
+
   const videoElRef = useRef<HTMLVideoElement | null>(null);
   const rafRef = useRef<number | null>(null);
   const rvfcRef = useRef<number | null>(null);
@@ -180,15 +187,14 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       valid = sup.valid;
       blink = sup.blink_state === 'closed';
 
+      const headLabel = headLabellerRef.current!.label(features.headPose, ts);
       if (valid) {
         eventInputsRef.current.push({
           timeMs: ts,
           x: filtX,
           y: filtY,
           valid: true,
-          headMotionLabel: features.headPose?.quality != null && features.headPose.quality >= 0.4
-            ? 'low'
-            : 'uncertain',
+          headMotionLabel: headLabel,
         });
         // Keep the buffer from growing unboundedly.
         if (eventInputsRef.current.length > TRACE_CAPACITY) {
@@ -216,6 +222,9 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       if (velocityRef.current.length > TRACE_CAPACITY) {
         velocityRef.current = velocityRef.current.slice(-TRACE_CAPACITY);
       }
+      // No face: reset the head-motion baseline so the next pose is not
+      // compared against a stale one across the gap.
+      headLabellerRef.current!.label(null, ts);
       suppressor.process({
         timeMs: ts,
         leftEyeOpen: true,
@@ -311,6 +320,7 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
       prevTsRef.current = null;
       lastUiRef.current = 0;
       lastDetectRef.current = 0;
+      headLabellerRef.current?.reset();
       traceRef.current = [];
       eventInputsRef.current = [];
       velocityRef.current = [];
