@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { StepDefinition } from '../steps';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
 import { stepDemos } from '../demos/registry';
@@ -188,5 +189,20 @@ export default function StepPage({ step }: { step: StepDefinition }) {
     </article>
   );
 
-  return demo ? <demo.Provider>{content}</demo.Provider> : content;
+  // Demo pages are code-split (one lazy chunk per step, see demos/registry.ts),
+  // so the page suspends briefly while its chunk loads on first visit.
+  return demo ? (
+    <Suspense
+      fallback={
+        <div className="step-page" aria-busy="true">
+          <h1 className="step-page__title">{step.title}</h1>
+          <p className="placeholder__hint">Loading this step…</p>
+        </div>
+      }
+    >
+      <demo.Provider>{content}</demo.Provider>
+    </Suspense>
+  ) : (
+    content
+  );
 }

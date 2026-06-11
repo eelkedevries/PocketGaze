@@ -50,7 +50,18 @@ export async function startFrontCamera(): Promise<MediaStream> {
 
   try {
     return await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user' },
+      video: {
+        facingMode: 'user',
+        // `ideal` constraints are best-effort and never cause an
+        // OverconstrainedError: devices that cannot deliver them fall back to
+        // their nearest supported mode. 720p gives the landmark model more
+        // pixels per eye region than the 480p default many browsers pick,
+        // which directly improves iris-landmark stability (§2.8: requested,
+        // not required, so low-end devices still work).
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 },
+      },
       audio: false,
     });
   } catch (error) {
