@@ -10,8 +10,7 @@ import {
 } from 'react';
 import CameraPreview from '../components/CameraPreview';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
-import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
-import { computeEyeLocalSignal } from '../lib/eyeLocalSignal';
+import { eyeLocalSignalFromFeatures } from '../lib/eyeLocalSignal';
 import { SignalFilterSet, DEFAULT_ONE_EURO_PARAMS } from '../lib/oneEuroFilter';
 import { SampleSuppressor, DEFAULT_SUPPRESSION_THRESHOLDS } from '../lib/suppression';
 import {
@@ -163,20 +162,9 @@ function Step6DemoProvider({ children }: { children: ReactNode }) {
     let valid = false;
     let blink = false;
 
-    if (features) {
-      const signal = computeEyeLocalSignal(
-        {
-          iris: features.leftEye.irisProxy,
-          region: landmarkBounds(features.landmarks, LEFT_EYE_EAR_IDX),
-          quality: features.leftEye.quality,
-        },
-        {
-          iris: features.rightEye.irisProxy,
-          region: landmarkBounds(features.landmarks, RIGHT_EYE_EAR_IDX),
-          quality: features.rightEye.quality,
-        },
-      );
-
+    const imageAspect = video.videoHeight > 0 ? video.videoWidth / video.videoHeight : 1;
+    const signal = features ? eyeLocalSignalFromFeatures(features, imageAspect) : null;
+    if (features && signal) {
       const filtered = filter.filterEyeLocal(signal, dtSec);
       const sup = suppressor.process({
         timeMs: ts,

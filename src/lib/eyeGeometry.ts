@@ -9,6 +9,15 @@ export const LEFT_EYE_EAR_IDX = [362, 385, 387, 263, 373, 380] as const;
 export const RIGHT_IRIS_IDX = [468, 469, 470, 471, 472] as const;
 export const LEFT_IRIS_IDX = [473, 474, 475, 476, 477] as const;
 
+/**
+ * Eye-corner (canthus) landmark indices, [outer/temporal, inner/nasal] per eye.
+ * The corners are the most stable eye landmarks — they do not move with blinks
+ * or squints — so they anchor the eye-local normalisation frame
+ * (`eyeLocalSignal.ts`).
+ */
+export const RIGHT_EYE_CORNER_IDX = [33, 133] as const;
+export const LEFT_EYE_CORNER_IDX = [263, 362] as const;
+
 /** Spread of well-distributed face landmarks used for overall quality. */
 export const FACE_QUALITY_IDX = [1, 4, 33, 61, 133, 152, 199, 263, 291] as const;
 

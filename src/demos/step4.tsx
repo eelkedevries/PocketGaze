@@ -13,8 +13,7 @@ import LivePrecision from '../components/LivePrecision';
 import { RollingPrecision, type RollingPrecisionValue } from '../lib/livePrecision';
 import { compensateEyeLocal } from '../lib/headCompensation';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
-import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
-import { computeEyeLocalSignal, type EyeLocalSignal } from '../lib/eyeLocalSignal';
+import { eyeLocalSignalFromFeatures, type EyeLocalSignal } from '../lib/eyeLocalSignal';
 import {
   createScreenGazeProviders,
   type ScreenGazeProviders,
@@ -223,20 +222,11 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
     const ts = performance.now();
     const features = extractor.processFrame(video, ts, store, frameCountRef.current);
 
-    let eyeLocal: EyeLocalSignal | null = null;
-    if (features) {
-      eyeLocal = computeEyeLocalSignal(
-        {
-          iris: features.leftEye.irisProxy,
-          region: landmarkBounds(features.landmarks, LEFT_EYE_EAR_IDX),
-          quality: features.leftEye.quality,
-        },
-        {
-          iris: features.rightEye.irisProxy,
-          region: landmarkBounds(features.landmarks, RIGHT_EYE_EAR_IDX),
-          quality: features.rightEye.quality,
-        },
-      );
+    const imageAspect = video.videoHeight > 0 ? video.videoWidth / video.videoHeight : 1;
+    const eyeLocal: EyeLocalSignal | null = features
+      ? eyeLocalSignalFromFeatures(features, imageAspect)
+      : null;
+    if (features && eyeLocal) {
       // Illustrative head-pose compensation (050): with it on, a head-pose term
       // is removed so motion-induced drift is reduced; with it off, the raw
       // eye-local point is shown and drifts when the head moves (§6.4). The

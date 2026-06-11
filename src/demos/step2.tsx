@@ -14,12 +14,15 @@ import { FaceFeatureExtractor, type FaceFeatures } from '../lib/featureExtractio
 import {
   LEFT_EYE_EAR_IDX,
   RIGHT_EYE_EAR_IDX,
+  LEFT_EYE_CORNER_IDX,
+  RIGHT_EYE_CORNER_IDX,
   LEFT_IRIS_IDX,
   RIGHT_IRIS_IDX,
   EAR_BLINK_THRESHOLD,
   landmarkBounds,
   type LandmarkLike,
 } from '../lib/eyeGeometry';
+import { EYE_FRAME_ASPECT } from '../lib/eyeLocalSignal';
 import { SessionStore } from '../lib/sessionStore';
 import type { StepDemo } from './registry';
 
@@ -147,9 +150,11 @@ const EAR_TRACE_MAX = 150;
 
 /**
  * Draw a magnified crop of one eye region from the current frame, with the iris
- * ring, the iris-proxy centre, and the eye-local normalisation box overlaid so
- * the centred −1…1 mapping (the Step 4 eye-local signal) is previewed. Reuses the
- * existing geometry; no new maths.
+ * ring, the iris-proxy centre, and the eye-local normalisation frame overlaid so
+ * the centred −1…1 mapping (the Step 4 eye-local signal) is previewed. The frame
+ * is anchored to the eye-corner landmarks — the same corner frame the eye-local
+ * signal uses — so it stays put during blinks and tilts with head roll. Reuses
+ * the existing geometry; no new maths.
  */
 function drawEyeCrop(canvas: HTMLCanvasElement, video: HTMLVideoElement, features: FaceFeatures | null): void {
   const ctx = canvas.getContext('2d');
@@ -173,22 +178,43 @@ function drawEyeCrop(canvas: HTMLCanvasElement, video: HTMLVideoElement, feature
 
   // Choose the higher-quality eye for the crop.
   const useLeft = features.leftEye.quality >= features.rightEye.quality;
-  const earIdx = useLeft ? LEFT_EYE_EAR_IDX : RIGHT_EYE_EAR_IDX;
+  const cornerIdx = useLeft ? LEFT_EYE_CORNER_IDX : RIGHT_EYE_CORNER_IDX;
   const irisIdx = useLeft ? LEFT_IRIS_IDX : RIGHT_IRIS_IDX;
   const proxy = useLeft ? features.leftEye.irisProxy : features.rightEye.irisProxy;
 
-  // The normalisation box: the eye-region bounds used by the eye-local signal.
-  const box = landmarkBounds(features.landmarks, earIdx);
-  const boxW = box.maxX - box.minX;
-  const boxH = box.maxY - box.minY;
-  // Context padding around the box for the crop source rectangle.
-  const padX = boxW * 0.6;
-  const padY = boxH * 1.1;
-  let sx0 = (box.minX - padX) * srcW;
-  let sy0 = (box.minY - padY) * srcH;
-  let sw = (boxW + 2 * padX) * srcW;
-  let sh = (boxH + 2 * padY) * srcH;
-  // Clamp the source rectangle into the frame.
+  const ca = features.landmarks[cornerIdx[0]];
+  const cb = features.landmarks[cornerIdx[1]];
+  if (!ca || !cb) return;
+
+  // Corner-frame geometry in source pixels (isotropic, like the signal maths):
+  // origin at the corner midpoint, x along the corner-to-corner axis, y
+  // perpendicular, half-height = EYE_FRAME_ASPECT x half-width.
+  const axPx = ca.x * srcW;
+  const ayPx = ca.y * srcH;
+  const bxPx = cb.x * srcW;
+  const byPx = cb.y * srcH;
+  const cxPx = (axPx + bxPx) / 2;
+  const cyPx = (ayPx + byPx) / 2;
+  let ux = bxPx - axPx;
+  let uy = byPx - ayPx;
+  const cornerDist = Math.hypot(ux, uy);
+  if (cornerDist < 1) return;
+  ux /= cornerDist;
+  uy /= cornerDist;
+  if (ux < 0) {
+    ux = -ux;
+    uy = -uy;
+  }
+  const halfW = cornerDist / 2;
+  const halfH = halfW * EYE_FRAME_ASPECT;
+
+  // Crop source rectangle centred on the frame, preserving the canvas aspect
+  // ratio so the eye is not stretched. Corner-anchored, so it does not pulse
+  // when the eyelids move.
+  let sw = cornerDist * 2.2;
+  let sh = sw * (ch / cw);
+  let sx0 = cxPx - sw / 2;
+  let sy0 = cyPx - sh / 2;
   sx0 = Math.max(0, Math.min(sx0, srcW - 1));
   sy0 = Math.max(0, Math.min(sy0, srcH - 1));
   sw = Math.max(1, Math.min(sw, srcW - sx0));
@@ -202,22 +228,50 @@ function drawEyeCrop(canvas: HTMLCanvasElement, video: HTMLVideoElement, feature
 
   const mapX = (nx: number) => ((nx * srcW - sx0) / sw) * cw;
   const mapY = (ny: number) => ((ny * srcH - sy0) / sh) * ch;
+  const mapPx = (px: number, py: number): [number, number] => [
+    ((px - sx0) / sw) * cw,
+    ((py - sy0) / sh) * ch,
+  ];
 
-  // Normalisation box.
+  // The corner-anchored frame (tilts with head roll) and its axes.
+  const rect: Array<[number, number]> = [
+    mapPx(cxPx + ux * halfW - uy * halfH, cyPx + uy * halfW + ux * halfH),
+    mapPx(cxPx + ux * halfW + uy * halfH, cyPx + uy * halfW - ux * halfH),
+    mapPx(cxPx - ux * halfW + uy * halfH, cyPx - uy * halfW - ux * halfH),
+    mapPx(cxPx - ux * halfW - uy * halfH, cyPx - uy * halfW + ux * halfH),
+  ];
   ctx.strokeStyle = '#9b8cff';
   ctx.lineWidth = 2;
-  ctx.strokeRect(mapX(box.minX), mapY(box.minY), mapX(box.maxX) - mapX(box.minX), mapY(box.maxY) - mapY(box.minY));
-  // Centred origin crosshair (the 0,0 of the −1…1 mapping).
-  const ox = mapX((box.minX + box.maxX) / 2);
-  const oy = mapY((box.minY + box.maxY) / 2);
+  ctx.beginPath();
+  rect.forEach(([x, y], i) => (i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y)));
+  ctx.closePath();
+  ctx.stroke();
+
+  // Frame axes through the origin (the 0,0 of the −1…1 mapping).
+  const [axisX0, axisY0] = mapPx(cxPx - ux * halfW, cyPx - uy * halfW);
+  const [axisX1, axisY1] = mapPx(cxPx + ux * halfW, cyPx + uy * halfW);
+  const [perpX0, perpY0] = mapPx(cxPx + uy * halfH, cyPx - ux * halfH);
+  const [perpX1, perpY1] = mapPx(cxPx - uy * halfH, cyPx + ux * halfH);
   ctx.strokeStyle = 'rgba(155,140,255,0.6)';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(mapX(box.minX), oy);
-  ctx.lineTo(mapX(box.maxX), oy);
-  ctx.moveTo(ox, mapY(box.minY));
-  ctx.lineTo(ox, mapY(box.maxY));
+  ctx.moveTo(axisX0, axisY0);
+  ctx.lineTo(axisX1, axisY1);
+  ctx.moveTo(perpX0, perpY0);
+  ctx.lineTo(perpX1, perpY1);
   ctx.stroke();
+
+  // Corner anchors.
+  ctx.fillStyle = '#9b8cff';
+  for (const [px, py] of [
+    [axPx, ayPx],
+    [bxPx, byPx],
+  ]) {
+    const [x, y] = mapPx(px, py);
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   // Iris ring landmarks and the iris-proxy centre.
   ctx.fillStyle = '#ffd166';
@@ -232,7 +286,7 @@ function drawEyeCrop(canvas: HTMLCanvasElement, video: HTMLVideoElement, feature
 
   ctx.fillStyle = 'rgba(229,233,240,0.85)';
   ctx.font = '11px system-ui, sans-serif';
-  ctx.fillText(`${useLeft ? 'left' : 'right'} eye · normalisation box`, 6, ch - 8);
+  ctx.fillText(`${useLeft ? 'left' : 'right'} eye · corner-anchored frame`, 6, ch - 8);
 }
 
 /** Draw a rolling EAR trace with the blink threshold as a reference line. */
@@ -554,12 +608,13 @@ function Step2LiveDemo() {
               height={150}
               className="eye-detail__canvas"
               role="img"
-              aria-label="Zoomed eye-region crop with iris ring, iris-proxy centre, and normalisation box"
+              aria-label="Zoomed eye-region crop with iris ring, iris-proxy centre, and the corner-anchored normalisation frame"
             />
             <figcaption className="eye-detail__caption">
-              Zoomed eye region. The purple box is the eye-local <strong>normalisation box</strong>:
-              the iris-proxy (orange) is mapped to −1…1 within it — a preview of the Step 4
-              eye-local signal.
+              Zoomed eye region. The purple frame is the eye-local{' '}
+              <strong>normalisation frame</strong>, anchored to the two eye corners (purple dots)
+              so it ignores eyelid movement and tilts with head roll; the iris proxy (orange) is
+              mapped to −1…1 within it — a preview of the Step 4 eye-local signal.
             </figcaption>
           </figure>
           <figure className="eye-detail__item">

@@ -15,8 +15,7 @@ import ValidationTask from './validationTask';
 import PursuitTask from './pursuitTask';
 import GazeContingentTask from './gazeContingentTask';
 import { FaceFeatureExtractor } from '../lib/featureExtraction';
-import { LEFT_EYE_EAR_IDX, RIGHT_EYE_EAR_IDX, landmarkBounds } from '../lib/eyeGeometry';
-import { computeEyeLocalSignal, type EyeLocalSignal } from '../lib/eyeLocalSignal';
+import { eyeLocalSignalFromFeatures, type EyeLocalSignal } from '../lib/eyeLocalSignal';
 import { RegressionGazeProvider, applyMapping } from '../lib/regressionGaze';
 import {
   fitGazeMapping,
@@ -143,21 +142,10 @@ function Step5DemoProvider({ children }: { children: ReactNode }) {
     const ts = performance.now();
     const features = extractor.processFrame(video, ts, store, frameCountRef.current);
 
-    let signal: EyeLocalSignal | null = null;
-    if (features) {
-      signal = computeEyeLocalSignal(
-        {
-          iris: features.leftEye.irisProxy,
-          region: landmarkBounds(features.landmarks, LEFT_EYE_EAR_IDX),
-          quality: features.leftEye.quality,
-        },
-        {
-          iris: features.rightEye.irisProxy,
-          region: landmarkBounds(features.landmarks, RIGHT_EYE_EAR_IDX),
-          quality: features.rightEye.quality,
-        },
-      );
-    }
+    const imageAspect = video.videoHeight > 0 ? video.videoWidth / video.videoHeight : 1;
+    const signal: EyeLocalSignal | null = features
+      ? eyeLocalSignalFromFeatures(features, imageAspect)
+      : null;
     signalRef.current = signal;
 
     const estimate = provider.estimate({ timeMs: ts, eyeLocal: signal });
