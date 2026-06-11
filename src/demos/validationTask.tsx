@@ -27,6 +27,8 @@ import type { SessionStore } from '../lib/sessionStore';
 const SETTLE_MS = 800;
 const SAMPLE_INTERVAL_MS = 80;
 const SAMPLES_PER_TARGET = 8;
+/** Capture attempts allowed per target before moving on with what was caught. */
+const MAX_TICKS_PER_TARGET = 16;
 
 /**
  * A validation grid OFFSET from the 9 calibration points. The default
@@ -53,6 +55,12 @@ interface ValidationTaskProps {
   store: SessionStore;
   /** Latest FITTED screen-gaze estimate from the host's camera loop (provider A). */
   getEstimate: () => ScreenGazeEstimate;
+  /**
+   * Optional capture gate: frames for which this returns false (e.g. blinks)
+   * are skipped. Data-quality validation conventionally excludes blink frames
+   * from accuracy/precision — they measure the eyelid, not the estimate.
+   */
+  isSampleValid?: () => boolean;
   /** Receives the number of held-out estimate samples captured when complete. */
   onComplete?: (capturedCount: number) => void;
   /** Called when the user stops the task before completion. */
@@ -63,6 +71,7 @@ interface ValidationTaskProps {
 export default function ValidationTask({
   store,
   getEstimate,
+  isSampleValid,
   onComplete,
   onCancel,
   dots = DEFAULT_VALIDATION_DOTS,
@@ -113,11 +122,15 @@ export default function ValidationTask({
       return () => clearTimer();
     }
 
-    // capture phase: record a few held-out estimates, then advance.
+    // capture phase: record quality-gated held-out estimates, then advance.
+    // Frames without an estimate or failing the validity gate (blinks) are
+    // skipped; the tick budget keeps the sequence moving regardless.
     let taken = 0;
+    let ticks = 0;
     const tick = () => {
       const estimate = getEstimate();
-      if (estimate.gaze_available) {
+      ticks += 1;
+      if (estimate.gaze_available && (isSampleValid?.() ?? true)) {
         capturedRef.current += 1;
         // A `quality` row tagged `validation`: the held-out target (CSS px AND
         // normalised) paired with the concurrent fitted estimate. Not relabelled
@@ -131,9 +144,9 @@ export default function ValidationTask({
           target_id: dot.id,
           ...screenGazeSampleFields(estimate),
         });
+        taken += 1;
       }
-      taken += 1;
-      if (taken >= SAMPLES_PER_TARGET) {
+      if (taken >= SAMPLES_PER_TARGET || ticks >= MAX_TICKS_PER_TARGET) {
         setPhase('settle');
         setIndex((i) => i + 1);
       } else {
@@ -142,7 +155,7 @@ export default function ValidationTask({
     };
     timerRef.current = setTimeout(tick, SAMPLE_INTERVAL_MS);
     return () => clearTimer();
-  }, [status, index, phase, placed, store, getEstimate, finish, clearTimer]);
+  }, [status, index, phase, placed, store, getEstimate, isSampleValid, finish, clearTimer]);
 
   const start = useCallback(() => {
     const el = stageRef.current;

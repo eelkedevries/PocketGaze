@@ -184,6 +184,11 @@ export default function EventDetectionLab() {
           <input type="range" min={0.1} max={1} step={0.05} value={thresholds.maxFixationDispersion}
             onChange={(e) => setT({ maxFixationDispersion: Number(e.target.value) })} />
         </label>
+        <label>
+          Min saccade amplitude: {thresholds.minSaccadeAmplitude.toFixed(2)}
+          <input type="range" min={0} max={0.2} step={0.01} value={thresholds.minSaccadeAmplitude}
+            onChange={(e) => setT({ minSaccadeAmplitude: Number(e.target.value) })} />
+        </label>
       </div>
 
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"

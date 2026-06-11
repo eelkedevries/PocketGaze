@@ -146,6 +146,62 @@ describe('detectEvents — saccades and head-motion labelling', () => {
   });
 });
 
+// detectEvents: noise-spike suppression --------------------------------------
+
+describe('detectEvents — noise-spike suppression', () => {
+  it('folds an out-and-back speed spike into the surrounding fixation', () => {
+    // Steady fixation with one glitch frame that jumps 0.3 units and returns:
+    // both glitch segments clear the speed threshold (0.3 / 33 ms ≈ 9 units/s),
+    // but the run's first-to-last displacement is ~0 — no saccade happened.
+    const samples = trace([
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+      [0.3, 0], // glitch frame
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+    ]);
+    const events = detectEvents(samples);
+    assert.strictEqual(events.length, 1);
+    assert.strictEqual(events[0].event_type, 'fixation_candidate');
+    assert.strictEqual(events[0].event_start_ms, 0);
+    assert.strictEqual(events[0].event_end_ms, 10 * 33);
+  });
+
+  it('keeps a genuine saccade that lands somewhere new', () => {
+    const samples = trace([
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+      [0.6, 0], // jump and STAY — a real saccade
+      [0.6, 0], [0.6, 0], [0.6, 0], [0.6, 0],
+    ]);
+    const events = detectEvents(samples);
+    assert.ok(events.some((e) => e.event_type === 'saccade_head_still'));
+  });
+
+  it('does not fold a spike whose own spread exceeds the dispersion limit', () => {
+    // A huge out-and-back excursion (0.8 units) is not silently absorbed into
+    // a fixation — its own bounding box fails the fixation dispersion bound.
+    const samples = trace([
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+      [0.8, 0],
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+    ]);
+    const events = detectEvents(samples);
+    // The spike stays saccade-class; the two fixations remain separate.
+    assert.strictEqual(events.filter((e) => e.event_type === 'fixation_candidate').length, 2);
+  });
+
+  it('can be disabled by setting minSaccadeAmplitude to zero', () => {
+    const samples = trace([
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+      [0.3, 0],
+      [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+    ]);
+    const events = detectEvents(samples, {
+      ...DEFAULT_EVENT_DETECTION_THRESHOLDS,
+      minSaccadeAmplitude: 0,
+    });
+    assert.ok(events.some((e) => e.event_type.startsWith('saccade')));
+  });
+});
+
 // detectEvents: invalid intervals -------------------------------------------
 
 describe('detectEvents — invalid samples break runs', () => {

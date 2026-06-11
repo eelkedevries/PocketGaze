@@ -35,6 +35,14 @@ export interface EventDetectionThresholds {
    * fixation.
    */
   maxFixationDispersion: number;
+  /**
+   * A saccade-like run whose first-to-last displacement is below this (eye-local
+   * units) went nowhere: a single-frame landmark glitch can clear the speed
+   * threshold out-and-back without the eye moving. Such runs are folded back
+   * into the surrounding fixation instead of being reported as saccades —
+   * provided their own spread also fits inside `maxFixationDispersion`.
+   */
+  minSaccadeAmplitude: number;
 }
 
 /**
@@ -44,11 +52,14 @@ export interface EventDetectionThresholds {
  *    a few frames; slow drift/jitter stays well below this.
  *  - 100 ms: shorter low-speed runs are not yet a confident fixation.
  *  - 0.5 units: a genuine fixation stays within a small patch of the eye region.
+ *  - 0.03 units: a real saccade lands somewhere new; an out-and-back spike of
+ *    less than this is landmark noise, not an eye movement.
  */
 export const DEFAULT_EVENT_DETECTION_THRESHOLDS: EventDetectionThresholds = {
   saccadeSpeedPerSec: 6,
   minFixationMs: 100,
   maxFixationDispersion: 0.5,
+  minSaccadeAmplitude: 0.03,
 };
 
 /** Per-frame input to detection: a filtered, suppression-checked sample. */
@@ -174,9 +185,39 @@ export function detectEvents(
     }
   }
 
-  // 2. Turn runs into candidate events.
-  const events: DetectedEvent[] = [];
+  // 2. Suppress noise spikes: a "saccade" that returns to (almost) where it
+  // started, within a fixation-sized patch, is a landmark glitch rather than
+  // an eye movement — real saccades land somewhere new. Reclassify such runs
+  // as fixation segments so the surrounding fixation is not fragmented and no
+  // phantom saccade is reported. Invalid-sample gaps are untouched: they
+  // remain hard breaks (§5 — never bridged).
   for (const seg of segments) {
+    if (
+      seg.class === 'saccade' &&
+      amplitudeOf(samples, seg.startIndex, seg.endIndex) < thresholds.minSaccadeAmplitude &&
+      dispersionOf(samples, seg.startIndex, seg.endIndex) <= thresholds.maxFixationDispersion
+    ) {
+      seg.class = 'fixation';
+    }
+  }
+
+  // 3. Re-merge contiguous same-class runs after the reclassification (two
+  // adjacent segments share their boundary sample index).
+  const runs: Segment[] = [];
+  for (const seg of segments) {
+    const last = runs[runs.length - 1];
+    if (last && last.class === seg.class && last.endIndex === seg.startIndex) {
+      last.endMs = seg.endMs;
+      last.endIndex = seg.endIndex;
+      last.headLabel = moreUncertain(last.headLabel, seg.headLabel);
+    } else {
+      runs.push({ ...seg });
+    }
+  }
+
+  // 4. Turn runs into candidate events.
+  const events: DetectedEvent[] = [];
+  for (const seg of runs) {
     if (seg.class === 'fixation') {
       const durationMs = seg.endMs - seg.startMs;
       if (durationMs < thresholds.minFixationMs) continue;

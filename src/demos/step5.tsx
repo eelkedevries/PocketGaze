@@ -527,13 +527,19 @@ function Step5LiveDemo() {
           <ValidationTask
             store={store}
             getEstimate={getEstimate}
+            isSampleValid={() => getCapture()?.eyesOpen ?? false}
             onComplete={onValidationComplete}
           />
 
           {validation && <ValidationReadout validation={validation} />}
 
           {validation && (
-            <CalibrationDriftCheck store={store} getEstimate={getEstimate} baseline={validation} />
+            <CalibrationDriftCheck
+              store={store}
+              getEstimate={getEstimate}
+              isSampleValid={() => getCapture()?.eyesOpen ?? false}
+              baseline={validation}
+            />
           )}
 
           <PursuitTask getEstimate={getEstimate} />
@@ -625,10 +631,12 @@ function CalibrationWarpGrid({ mapping }: { mapping: GazeCalibrationResult['mapp
 function CalibrationDriftCheck({
   store,
   getEstimate,
+  isSampleValid,
   baseline,
 }: {
   store: SessionStore;
   getEstimate: () => ScreenGazeEstimate;
+  isSampleValid: () => boolean;
   baseline: ValidationResult;
 }) {
   const [offset, setOffset] = useState<number | null>(null);
@@ -677,7 +685,12 @@ function CalibrationDriftCheck({
             tilt the phone a little, shift your posture, or change the lighting — then run the dots
             again.
           </p>
-          <ValidationTask store={store} getEstimate={getEstimate} onComplete={onComplete} />
+          <ValidationTask
+            store={store}
+            getEstimate={getEstimate}
+            isSampleValid={isSampleValid}
+            onComplete={onComplete}
+          />
         </>
       )}
       {after && (

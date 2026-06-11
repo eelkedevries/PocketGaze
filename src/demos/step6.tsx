@@ -831,6 +831,10 @@ function Step6DetailsPanels() {
             treated as drift
           </li>
           <li>
+            Minimum saccade amplitude: <strong>{e.minSaccadeAmplitude} units</strong> — a fast spike that returns to
+            where it started is landmark noise, folded back into the surrounding fixation rather than reported
+          </li>
+          <li>
             Head-motion context: saccades re-labelled as <code>saccade_head_still</code>,{' '}
             <code>saccade_during_head_movement</code>, or <code>uncertain_head_motion</code> (§6.4)
           </li>
