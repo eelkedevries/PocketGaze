@@ -351,6 +351,17 @@ modernised the toolchain and materially improved tracking quality. Spec reconcil
 - **Shell/content:** per-page document titles, brand links home, About links the repo,
   richer meta tags; README/docs updated (incl. an eye-local-vs-gaze terminology fix in
   `docs/usage.md`).
+- **Task-demo pass (same batch, second round):** the Step 7 visual search became the
+  classic T-among-rotated-Ls (random quarter-turns per item, regenerated per search) so
+  TTFF measures a real serial search; `aoiTask` was refactored onto the shared
+  `useAoiVisits` hook (removing its duplicated visit-accumulation copy); pursuit gain is
+  computed on One Euro–smoothed gaze (raw jitter inflated the path-length ratio) with a
+  note that research-grade gain also removes catch-up saccades; dwell-click and reading
+  copy cite the conventional dwell range (~300–1000 ms, Midas touch) and word- vs
+  line-level AOIs — all verified against the paradigm literature. Step intros/methods
+  were tightened (~100–150 words → 60–90, no caveats removed) and two limitations that
+  spoke in dev-process terms ("method spike") now state the actual decision. Step 4 only
+  grabs frames for provider B once its model is ready.
 
 ## Revision-7 reconciliation (prompts 057–078)
 

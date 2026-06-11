@@ -173,6 +173,7 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
   const frameCountRef = useRef(0);
   const traceRef = useRef<{ x: number; y: number }[]>([]);
   const providerIdRef = useRef<ProviderId>('regression');
+  const providerBReadyRef = useRef(false);
   const precisionRef = useRef<RollingPrecision>(new RollingPrecision());
   const compensateRef = useRef(true);
 
@@ -241,10 +242,12 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
       precisionRef.current.push({ x: shown.x, y: shown.y });
     }
 
-    // Feed the selected provider. Provider B (image-based) needs the frame.
+    // Feed the selected provider. Provider B (image-based) needs the frame —
+    // but only grab one (getImageData is costly) once its model is ready;
+    // while it loads, grabbed frames would be thrown away unprocessed.
     const provider = providers.registry.selected;
     const useB = providerIdRef.current === 'webeyetrack';
-    const frame = useB ? grabFrame(video) : null;
+    const frame = useB && providerBReadyRef.current ? grabFrame(video) : null;
     const gaze: ScreenGazeEstimate = provider
       ? provider.estimate({
           timeMs: ts,
@@ -328,7 +331,10 @@ function Step4DemoProvider({ children }: { children: ReactNode }) {
         setProviderBStatus('loading');
         providers.webEyeTrack
           .init()
-          .then(() => setProviderBStatus('ready'))
+          .then(() => {
+            providerBReadyRef.current = true;
+            setProviderBStatus('ready');
+          })
           .catch(() => setProviderBStatus('error'));
       }
     },

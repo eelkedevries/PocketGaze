@@ -214,7 +214,7 @@ export const steps: StepDefinition[] = [
       'This page is the map. It introduces the pipeline and the vocabulary; each of Steps 1–7 then follows the same layout — a brief introduction, the options and methods, what the page implements, a live demo, optional implementation details, the outputs, and the limitations.',
     coordinateFigure: true,
     usageNote:
-      'Use the “Show implementation details” control in the header at any time. With it switched off, each step shows only its main demo and explanation; switch it on to reveal the optional subprocess panels — intermediate signals, frame timing, landmarks, head pose, filtering stages, calibration samples, and so on — that show how a result was produced. It is a single switch that applies across the whole site, including the panel below.',
+      'The “Show implementation details” switch in the header applies across the whole site, including the panel below. Off, each step shows only its demo and explanation; on, it reveals the optional subprocess panels — intermediate signals, frame timing, landmarks, head pose, filter stages, calibration samples — that show how each result was produced.',
     noLiveDemo: true,
     pipelineStages: [
       { label: 'Step 1', title: 'Capture and timing', summary: 'Timestamped frames from the front camera.' },
