@@ -46,3 +46,31 @@ final report rather than committing past it.
 - [ ] Export produces a single combined CSV with a `row_type` column (spec §4.1).
 - [ ] Non-applicable fields are blank; raw and filtered values are in separate columns.
 - [ ] `time_ms` is milliseconds from session start and consistent across subsystems.
+
+## Tracking-robustness batch (2026-06-11) — deferred runtime checks
+
+Added by the corner-frame / calibration / toolchain revision; these could not be run in
+the agent environment (no camera or browser there).
+
+- [ ] After the Vite 8 upgrade, the deployed site loads on Android Chrome and Firefox
+      (new browser baseline: Chrome 111+/Firefox 114+/Safari 16.4+) and each step's lazy
+      chunk loads on first visit (brief "Loading this step…" then the demo).
+- [ ] The camera negotiates up to 1280×720 where supported and still starts on devices
+      that cannot deliver it (best-effort constraints).
+- [ ] Step 2: the purple corner-anchored frame stays put during blinks (no pulsing),
+      tilts with head roll, and the corner anchor dots sit on the eye corners; the EAR
+      trace shows both hysteresis lines and open/closed no longer flickers near them.
+- [ ] Step 4: the eye-local trace no longer dips when squinting/blinking (eyelid
+      invariance) and rotates cleanly under head roll.
+- [ ] Step 5: calibration runs ~9 dots × (0.7 s settle + ~0.9 s capture) without
+      stalling when quality is poor (tick budget); blinking during a dot visibly reduces
+      "Samples used"; the quality panel reports rejected outliers when you glance away
+      during a dot.
+- [ ] Step 5: after calibrating, turning the head slightly while fixating a point moves
+      the estimate less than it did before the head-pose features (qualitative check).
+- [ ] Step 5: validation skips blink frames (blink through a target — captured count
+      stays below 8 × targets) and still completes.
+- [ ] Step 6: a fast head turn now yields saccade_during_head_movement /
+      uncertain_head_motion labels (real labeller), and brief landmark spikes no longer
+      appear as phantom micro-saccades.
+- [ ] Browser tab/history titles change per step and on the About page.
