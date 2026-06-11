@@ -650,7 +650,7 @@ function Step6LiveDemo() {
               <input
                 type="range"
                 min={0}
-                max={0.05}
+                max={0.1}
                 step={0.001}
                 value={filterParams.beta}
                 onChange={(e) =>

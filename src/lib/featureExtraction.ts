@@ -22,6 +22,7 @@ import {
   computeEAR,
   earToOpenness,
   isEyeOpen,
+  EyelidStateTracker,
   landmarkCentroid,
   averageVisibility,
   type Point3,
@@ -80,6 +81,10 @@ export class FaceFeatureExtractor {
   private landmarker: FaceLandmarker | null = null;
   private initPromise: Promise<void> | null = null;
   private _state: FaceExtractorState = 'uninitialised';
+  // Per-eye open/closed state with hysteresis, so EAR values hovering near a
+  // single threshold cannot flicker blink_state frame to frame.
+  private readonly leftEyelid = new EyelidStateTracker();
+  private readonly rightEyelid = new EyelidStateTracker();
 
   get state(): FaceExtractorState {
     return this._state;
@@ -173,6 +178,11 @@ export class FaceFeatureExtractor {
     const landmarks = rawLandmarks[0] as LandmarkLike[];
     const features = extractFeatures(landmarks);
 
+    // Replace the stateless per-frame open/closed flags with the
+    // hysteresis-stabilised state (close below 0.18, reopen above 0.24).
+    features.leftEye.isOpen = this.leftEyelid.update(features.leftEye.ear);
+    features.rightEye.isOpen = this.rightEyelid.update(features.rightEye.ear);
+
     // Head pose from the facial transformation matrix (§7.3, §8.15). Pose
     // quality is proxied by the face landmark quality, since pose is derived
     // from the landmarks.
@@ -246,6 +256,8 @@ export class FaceFeatureExtractor {
     this.landmarker = null;
     this._state = 'uninitialised';
     this.initPromise = null;
+    this.leftEyelid.reset();
+    this.rightEyelid.reset();
   }
 }
 

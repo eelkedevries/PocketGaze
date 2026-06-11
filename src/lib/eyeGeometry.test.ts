@@ -4,10 +4,13 @@ import {
   computeEAR,
   earToOpenness,
   isEyeOpen,
+  EyelidStateTracker,
   landmarkCentroid,
   averageVisibility,
   landmarkBounds,
   EAR_BLINK_THRESHOLD,
+  EAR_CLOSE_THRESHOLD,
+  EAR_REOPEN_THRESHOLD,
   EAR_CLOSED,
   EAR_OPEN,
   RIGHT_EYE_EAR_IDX,
@@ -108,6 +111,50 @@ describe('isEyeOpen', () => {
   it('returns false at or below the blink threshold', () => {
     assert.ok(!isEyeOpen(EAR_BLINK_THRESHOLD));
     assert.ok(!isEyeOpen(0));
+  });
+});
+
+// EyelidStateTracker ---------------------------------------------------------
+
+describe('EyelidStateTracker', () => {
+  it('starts open and closes only below the close threshold', () => {
+    const t = new EyelidStateTracker();
+    assert.ok(t.isOpen);
+    assert.ok(t.update(EAR_CLOSE_THRESHOLD)); // at, not below -> still open
+    assert.ok(!t.update(EAR_CLOSE_THRESHOLD - 0.01));
+  });
+
+  it('reopens only above the reopen threshold', () => {
+    const t = new EyelidStateTracker();
+    t.update(0.05); // closed
+    assert.ok(!t.update(EAR_REOPEN_THRESHOLD)); // at, not above -> still closed
+    assert.ok(t.update(EAR_REOPEN_THRESHOLD + 0.01));
+  });
+
+  it('does not flicker for values inside the hysteresis band', () => {
+    const inBand = (EAR_CLOSE_THRESHOLD + EAR_REOPEN_THRESHOLD) / 2;
+    const open = new EyelidStateTracker();
+    assert.ok(open.update(inBand)); // open eye stays open
+    assert.ok(open.update(inBand));
+    const closed = new EyelidStateTracker();
+    closed.update(0.05); // close it
+    assert.ok(!closed.update(inBand)); // closed eye stays closed
+    assert.ok(!closed.update(inBand));
+  });
+
+  it('tracks a full blink sequence', () => {
+    const t = new EyelidStateTracker();
+    const ears = [0.3, 0.28, 0.16, 0.08, 0.1, 0.2, 0.3];
+    const states = ears.map((e) => t.update(e));
+    assert.deepEqual(states, [true, true, false, false, false, false, true]);
+  });
+
+  it('reset returns to the open state', () => {
+    const t = new EyelidStateTracker();
+    t.update(0.05);
+    assert.ok(!t.isOpen);
+    t.reset();
+    assert.ok(t.isOpen);
   });
 });
 

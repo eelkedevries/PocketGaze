@@ -27,6 +27,10 @@ export const EAR_CLOSED = 0.15;
 export const EAR_OPEN = 0.35;
 /** EAR threshold below which the eye is classified as closed/blinking. */
 export const EAR_BLINK_THRESHOLD = 0.2;
+/** Hysteresis: an open eye closes when EAR falls below this... */
+export const EAR_CLOSE_THRESHOLD = 0.18;
+/** ...and a closed eye reopens only once EAR rises above this. */
+export const EAR_REOPEN_THRESHOLD = 0.24;
 
 export interface Point3 {
   x: number;
@@ -68,9 +72,51 @@ export function earToOpenness(ear: number): number {
   return Math.max(0, Math.min(1, (ear - EAR_CLOSED) / (EAR_OPEN - EAR_CLOSED)));
 }
 
-/** Return true when the EAR indicates the eye is open (not blinking). */
+/** Return true when the EAR indicates the eye is open (not blinking).
+ *  Stateless single-threshold check; the live pipeline uses the stateful
+ *  {@link EyelidStateTracker}, whose hysteresis suppresses flicker when the
+ *  EAR hovers near one threshold. */
 export function isEyeOpen(ear: number): boolean {
   return ear > EAR_BLINK_THRESHOLD;
+}
+
+/**
+ * Stateful per-eye open/closed tracker with hysteresis (a Schmitt trigger):
+ * an open eye closes when EAR drops below `closeBelow`, and only reopens once
+ * EAR rises above `reopenAbove`. A single threshold flickers open/closed for
+ * frames where the EAR hovers around it — half-blinks, squints, landmark
+ * jitter — and every false transition both pollutes `blink_state` and punches
+ * spurious gaps into event detection. The dual threshold is the standard fix
+ * in the EAR blink-detection literature.
+ */
+export class EyelidStateTracker {
+  private open = true;
+  private readonly closeBelow: number;
+  private readonly reopenAbove: number;
+
+  constructor(closeBelow = EAR_CLOSE_THRESHOLD, reopenAbove = EAR_REOPEN_THRESHOLD) {
+    this.closeBelow = closeBelow;
+    this.reopenAbove = reopenAbove;
+  }
+
+  /** Feed one EAR sample; returns the (hysteresis-stabilised) open state. */
+  update(ear: number): boolean {
+    if (this.open) {
+      if (ear < this.closeBelow) this.open = false;
+    } else if (ear > this.reopenAbove) {
+      this.open = true;
+    }
+    return this.open;
+  }
+
+  /** True while the eye is considered open. */
+  get isOpen(): boolean {
+    return this.open;
+  }
+
+  reset(): void {
+    this.open = true;
+  }
 }
 
 /** Centroid of landmark positions at the given indices. */

@@ -18,7 +18,8 @@ import {
   RIGHT_EYE_CORNER_IDX,
   LEFT_IRIS_IDX,
   RIGHT_IRIS_IDX,
-  EAR_BLINK_THRESHOLD,
+  EAR_CLOSE_THRESHOLD,
+  EAR_REOPEN_THRESHOLD,
   landmarkBounds,
   type LandmarkLike,
 } from '../lib/eyeGeometry';
@@ -289,7 +290,7 @@ function drawEyeCrop(canvas: HTMLCanvasElement, video: HTMLVideoElement, feature
   ctx.fillText(`${useLeft ? 'left' : 'right'} eye · corner-anchored frame`, 6, ch - 8);
 }
 
-/** Draw a rolling EAR trace with the blink threshold as a reference line. */
+/** Draw a rolling EAR trace with the blink hysteresis thresholds as reference lines. */
 function drawEarTrace(canvas: HTMLCanvasElement, trace: number[]): void {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
@@ -302,19 +303,27 @@ function drawEarTrace(canvas: HTMLCanvasElement, trace: number[]): void {
   const EAR_MAX = 0.45;
   const toY = (ear: number) => h - (Math.min(EAR_MAX, Math.max(0, ear)) / EAR_MAX) * h;
 
-  // Blink threshold line.
-  const ty = toY(EAR_BLINK_THRESHOLD);
-  ctx.strokeStyle = 'rgba(255,180,180,0.9)';
+  // Hysteresis thresholds: close below the lower line, reopen above the upper.
+  ctx.font = '10px monospace';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 3]);
+  const closeY = toY(EAR_CLOSE_THRESHOLD);
+  ctx.strokeStyle = 'rgba(255,180,180,0.9)';
   ctx.beginPath();
-  ctx.moveTo(0, ty);
-  ctx.lineTo(w, ty);
+  ctx.moveTo(0, closeY);
+  ctx.lineTo(w, closeY);
+  ctx.stroke();
+  const reopenY = toY(EAR_REOPEN_THRESHOLD);
+  ctx.strokeStyle = 'rgba(91,227,155,0.7)';
+  ctx.beginPath();
+  ctx.moveTo(0, reopenY);
+  ctx.lineTo(w, reopenY);
   ctx.stroke();
   ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(91,227,155,0.85)';
+  ctx.fillText(`reopen > ${EAR_REOPEN_THRESHOLD}`, 6, reopenY - 4);
   ctx.fillStyle = 'rgba(255,180,180,0.9)';
-  ctx.font = '10px monospace';
-  ctx.fillText(`blink < ${EAR_BLINK_THRESHOLD}`, 6, ty - 4);
+  ctx.fillText(`close < ${EAR_CLOSE_THRESHOLD}`, 6, closeY + 11);
 
   if (trace.length >= 2) {
     ctx.strokeStyle = '#5be39b';
@@ -628,7 +637,9 @@ function Step2LiveDemo() {
             />
             <figcaption className="eye-detail__caption">
               Live <strong>EAR</strong> (eye-aspect-ratio, combined). Blink and watch the trace dip
-              below the dashed blink threshold — blink detection made observable.
+              below the red close threshold; the eye only counts as open again above the green
+              reopen line. The gap between the two (hysteresis) stops half-closed frames from
+              flickering between open and closed.
             </figcaption>
           </figure>
         </div>

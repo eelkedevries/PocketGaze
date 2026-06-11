@@ -24,10 +24,17 @@ export interface OneEuroParams {
   dCutoff: number;
 }
 
-/** Documented defaults; tune per device/signal (not device-calibrated). */
+/**
+ * Documented defaults; tune per device/signal (not device-calibrated).
+ * minCutoff 1 Hz follows the authors' recommended starting point; beta 0.03
+ * sits in the range gaze pipelines use in practice (~0.02-0.07) — the paper's
+ * generic 0.007 keeps saccades visibly lagging behind the eye, and for a gaze
+ * signal responsiveness during fast movement matters more than the last bit
+ * of rest jitter (which minCutoff already controls).
+ */
 export const DEFAULT_ONE_EURO_PARAMS: OneEuroParams = {
   minCutoff: 1.0,
-  beta: 0.007,
+  beta: 0.03,
   dCutoff: 1.0,
 };
 
