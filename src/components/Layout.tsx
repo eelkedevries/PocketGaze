@@ -12,7 +12,9 @@ export default function Layout() {
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="site-header__bar">
-          <span className="site-header__brand">PocketGaze</span>
+          <Link to="/step-0" className="site-header__brand">
+            PocketGaze
+          </Link>
           <label className="details-toggle">
             <input
               type="checkbox"

@@ -3,8 +3,10 @@ import MethodComparisonTable from './MethodComparisonTable';
 import DeviceBenchmarkTable from './DeviceBenchmarkTable';
 import ExportInspector from './ExportInspector';
 import ResourcesSection from './ResourcesSection';
+import { usePageTitle } from './usePageTitle';
 
 export default function AboutPage() {
+  usePageTitle('About & Privacy');
   return (
     <article className="step-page">
       <h1 className="step-page__title">About &amp; Privacy</h1>
@@ -80,8 +82,12 @@ export default function AboutPage() {
       <section className="step-section">
         <h2>Source code</h2>
         <p>
-          The source code is publicly available on GitHub. The repository includes
-          development documentation that is never included in the deployed build output.
+          The source code is publicly available at{' '}
+          <a href="https://github.com/eelkedevries/PocketGaze">
+            github.com/eelkedevries/PocketGaze
+          </a>
+          . The repository includes development documentation that is never included in the
+          deployed build output.
         </p>
       </section>
     </article>

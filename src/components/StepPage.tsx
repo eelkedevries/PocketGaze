@@ -3,6 +3,7 @@ import type { StepDefinition } from '../steps';
 import { useImplementationDetails } from '../context/ImplementationDetailsContext';
 import { stepDemos } from '../demos/registry';
 import CoordinateChainFigure from './CoordinateChainFigure';
+import { usePageTitle } from './usePageTitle';
 
 // Progressive-disclosure ladder (056): the intro (concept) is always visible;
 // the mechanism tier is a local expander; the maths tier is the deepest tier and
@@ -47,6 +48,7 @@ function DisclosureLevels({ disclosure }: { disclosure: NonNullable<StepDefiniti
 export default function StepPage({ step }: { step: StepDefinition }) {
   const { showDetails } = useImplementationDetails();
   const demo = stepDemos[step.slug];
+  usePageTitle(step.title);
 
   const content = (
     <article className="step-page">
